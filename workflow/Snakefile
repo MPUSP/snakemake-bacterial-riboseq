@@ -1,0 +1,91 @@
+# ----------------------------------------------------- #
+# A Snakemake workflow for the analysis of riboseq      #
+# data in bacteria.                                     #
+# Authors: Rina Ahmed-Begrich, Michael Jahn             #
+# Date: 2024-22-07                                      #
+# License: Free for non-commercial use (see LICENSE)    #
+#          For all 3rd party tools separate licenses    #
+#          may apply.                                   #
+# ----------------------------------------------------- #
+
+import os
+import pandas as pd
+from datetime import date
+from snakemake.utils import min_version
+
+#min_version("7.0")
+
+__author__ = "Rina Ahmed-Begrich, Michael Jahn"
+__year__ = str(date.today()).split('-')[0]
+
+bold = "\033[1m"
+green = "\033[92m"
+cyan = "\033[36m"
+end = "\033[0m"
+
+msg = f"""{cyan}Bacterial-Riboseq: A Snakemake workflow
+for the analysis of riboseq data in bacteria.{end}
+"""
+
+epilog=f"""
+{cyan}Written by {__author__}.
+Max Planck Unit for the Science of Pathogens. Copyright (c) {__year__}.
+Copyright Holder All Rights Reserved.{end}
+
+"""
+
+# load configuration
+# -----------------------------------------------------
+configfile: "config/config.yml"
+
+
+# load rules
+# -----------------------------------------------------
+include: "rules/common.smk"
+include: "rules/preprocessing.smk"
+include: "rules/postprocessing.smk"
+
+
+# set shell configs
+# -----------------------------------------------------
+shell.executable("bash")
+shell.prefix(f"set -eo pipefail; ")
+
+if config.get('output') is None:
+    config['output'] =  os.path.join(os.getcwd(), "./results")
+
+onstart:
+    print("\n--- Analysis started...\n")
+    print()
+    print("--- Analysis parameters --------------------------------------------\n")
+    print(f"Current working directory: {os.path.join(os.getcwd())}")
+    print(f"Output directory:", {config['output']})
+    print()
+    print(f"Riboseq samples: {list(samples.index)}")
+    print()
+
+onsuccess:
+    print()
+    print(msg)
+    print(epilog)
+    print("--- Workflow finished, no error! -----------------------------------")
+    print()
+    debug = os.path.join(config['output'], "workflow.log")
+    shell("cat {log} > {debug} && echo -e '\nWorkflow finished, no error!\n' >> {debug}")
+
+onerror:
+    print()
+    print(msg)
+    print(epilog)
+    print("--- An error occurred! ---------------------------------------------")
+    print()
+    error = os.path.join(config['output'], "error.log")
+    shell("cat {log} > {error} && echo -e '\nAn error occurred!' >> {error}")
+
+
+# target rules
+# -----------------------------------------------------
+rule all:
+    input:
+        get_final_output(),
+    default_target: True

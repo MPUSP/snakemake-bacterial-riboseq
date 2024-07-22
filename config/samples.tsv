@@ -1,0 +1,3 @@
+sample	condition	replicate	lib_prep 	data_folder	fq1
+RPF-RTP1	RPF-RTP	1	mpusp	.test/data	RPF-RTP1_R1_001.fastq.gz
+RPF-RTP2	RPF-RTP	2	mpusp	.test/data	RPF-RTP2_R1_001.fastq.gz

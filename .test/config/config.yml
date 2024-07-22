@@ -1,0 +1,79 @@
+
+# optional: define output folder here
+# default: "./results"
+output: null
+
+# define samplesheet here
+samplesheet: "./test/config/samples.tsv"
+
+get_genome:
+  database: "ncbi"
+  assembly: "GCF_000006785.2"
+  fasta: Null
+  gff: Null
+
+cutadapt:
+  fivep_adapter: Null
+  threep_adapter: "ATCGTAGATCGGAAGAGCACACGTCTGAA"
+  default: ["-q 10 ", "-m 22 ", "-M 52", "--overlap=3"]
+
+umi_extraction:
+  method: "regex"
+  pattern: "^(?P<umi_0>.{2}).*(?P<umi_1>.{5})$"
+umi_dedup: ["--edit-distance-threshold=0", "--read-length"]
+
+star:
+  index: Null
+  genomeSAindexNbases: 9
+  multi: 10
+  sam_multi: 1
+  intron_max: 1
+  default: [
+    "--readFilesCommand zcat ",
+    "--outSAMstrandField None ",
+    "--outSAMattributes All ",
+    "--outSAMattrIHstart 0 ",
+    "--outFilterType Normal ",
+    "--outFilterMultimapScoreRange 1 ",
+    "-o STARmappings ",
+    "--outSAMtype BAM Unsorted ",
+    "--outStd BAM_Unsorted ",
+    "--outMultimapperOrder Random ",
+    "--alignEndsType EndToEnd"]
+
+extract_features:
+  biotypes: ["rRNA", "tRNA"]
+  CDS: ["protein_coding"]
+
+bedtools_intersect:
+  defaults: ["-v ", "-s ", "-f 0.2"]
+
+deeptools:
+  libtype: "sense" # parameter not used yet. Only sense direction currently handled # TODO #
+  bin_size: 1
+  normalize: "CPM"
+
+annotate_orfs:
+    window_size: 30
+    sorf_max_length: 300
+    sorf_min_length: 45
+    orf_start_codon_table: 11
+    orf_stop_codon: ["TAA", "TAG", "TGA"]
+    orf_longest_only: False
+
+shift_reads:
+    window_size: 30
+    read_length: [27, 45]
+    # rpf_read_length: [30, 45]
+    # qti_read_length: [27, 45]
+    rnaseq_read_length: [0, 1000]
+    end_alignment: "3prime"
+    shift_table: "config/shift_table/shift_table.csv"
+    export_bam: False
+    export_bigwig: True
+    skip_shifting: False
+    skip_length_filter: True
+
+
+multiqc:
+  config: "config/multiqc_config.yml"

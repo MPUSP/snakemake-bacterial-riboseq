@@ -1,0 +1,15 @@
+results/**
+resources/**
+.snakemake
+.snakemake/**
+.venv/**
+.env/**
+.DS_Store
+!.gitignore
+!.gitattributes
+!.editorconfig
+
+# Custom additions
+Notes.md
+.vscode/*
+.snakemake-workflow-catalog.yml

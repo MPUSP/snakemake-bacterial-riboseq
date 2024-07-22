@@ -1,0 +1,7 @@
+name: multiqc
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+dependencies:
+  - multiqc=1.22.2

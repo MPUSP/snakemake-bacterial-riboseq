@@ -1,0 +1,7 @@
+name: filter_bam
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - bedtools=2.31.1
+  - samtools=1.20
