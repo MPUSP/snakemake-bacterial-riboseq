@@ -13,10 +13,10 @@ import pandas as pd
 from datetime import date
 from snakemake.utils import min_version
 
-#min_version("7.0")
+# min_version("7.0")
 
 __author__ = "Rina Ahmed-Begrich, Michael Jahn"
-__year__ = str(date.today()).split('-')[0]
+__year__ = str(date.today()).split("-")[0]
 
 bold = "\033[1m"
 green = "\033[92m"
@@ -27,12 +27,13 @@ msg = f"""{cyan}Bacterial-Riboseq: A Snakemake workflow
 for the analysis of riboseq data in bacteria.{end}
 """
 
-epilog=f"""
+epilog = f"""
 {cyan}Written by {__author__}.
 Max Planck Unit for the Science of Pathogens. Copyright (c) {__year__}.
 Copyright Holder All Rights Reserved.{end}
 
 """
+
 
 # load configuration
 # -----------------------------------------------------
@@ -46,23 +47,16 @@ include: "rules/preprocessing.smk"
 include: "rules/postprocessing.smk"
 
 
-# set shell configs
-# -----------------------------------------------------
-shell.executable("bash")
-shell.prefix(f"set -eo pipefail; ")
-
-if config.get('output') is None:
-    config['output'] =  os.path.join(os.getcwd(), "./results")
-
 onstart:
     print("\n--- Analysis started...\n")
     print()
     print("--- Analysis parameters --------------------------------------------\n")
-    print(f"Current working directory: {os.path.join(os.getcwd())}")
-    print(f"Output directory:", {config['output']})
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Output directory: {os.path.join(os.getcwd(), 'results')}")
     print()
     print(f"Riboseq samples: {list(samples.index)}")
     print()
+
 
 onsuccess:
     print()
@@ -70,8 +64,11 @@ onsuccess:
     print(epilog)
     print("--- Workflow finished, no error! -----------------------------------")
     print()
-    debug = os.path.join(config['output'], "workflow.log")
-    shell("cat {log} > {debug} && echo -e '\nWorkflow finished, no error!\n' >> {debug}")
+    debug = os.path.join(os.getcwd(), "results/workflow.log")
+    shell(
+        "cat {log} > {debug} && echo -e '\nWorkflow finished, no error!\n' >> {debug}"
+    )
+
 
 onerror:
     print()
@@ -79,7 +76,7 @@ onerror:
     print(epilog)
     print("--- An error occurred! ---------------------------------------------")
     print()
-    error = os.path.join(config['output'], "error.log")
+    error = os.path.join(os.getcwd(), "results/error.log")
     shell("cat {log} > {error} && echo -e '\nAn error occurred!' >> {error}")
 
 

@@ -2,6 +2,7 @@
 # Riboseq postprocessing:                               #
 # ----------------------------------------------------- #
 
+
 # module to extract selected biotypes from gff file
 # -----------------------------------------------------
 rule extract_mRNA_features:
@@ -60,7 +61,7 @@ rule shift_reads:
         """--- Shifting Ribo-Seq reads."""
     params:
         config["shift_reads"],
-    threads: workflow.cores,
+    threads: workflow.cores
     log:
         path="results/shift_reads/log/{sample}.log",
     script:

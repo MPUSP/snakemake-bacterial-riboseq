@@ -13,3 +13,4 @@ resources/**
 Notes.md
 .vscode/*
 .snakemake-workflow-catalog.yml
+.test/results/*

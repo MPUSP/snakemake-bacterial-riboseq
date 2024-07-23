@@ -2,6 +2,7 @@
 # Riboseq preprocessing:                                #
 # ----------------------------------------------------- #
 
+
 # module to make QC report
 # -----------------------------------------------------
 rule fastqc:
@@ -10,12 +11,12 @@ rule fastqc:
     output:
         report=directory("results/fastqc_{status}/{sample}"),
     conda:
-        "../envs/fastqc.yml",
+        "../envs/fastqc.yml"
     message:
         """--- Checking fastq files with FastQC."""
     log:
         "results/fastqc_{status}/log/{sample}.log",
-    threads: int(workflow.cores * 0.2), # assign 20% of max cores
+    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "mkdir -p {output.report};"
         "fastqc --nogroup -extract --threads {threads} -o {output.report} {input} > {log}"
@@ -25,9 +26,11 @@ rule fastqc:
 # -----------------------------------------------------
 rule cutadapt:
     input:
-        fastq=lambda wc: expand("{input_dir}/{sample}",
+        fastq=lambda wc: expand(
+            "{input_dir}/{sample}",
             input_dir=samples.loc[wc.sample]["data_folder"],
-            sample=samples.loc[wc.sample]["fq1"]),
+            sample=samples.loc[wc.sample]["fq1"],
+        ),
     output:
         fastq="results/clipped/{sample}.fastq.gz",
     conda:
@@ -41,7 +44,7 @@ rule cutadapt:
     log:
         stdout="results/clipped/log/{sample}.log",
         stderr="results/clipped/log/{sample}.stderr",
-    threads: int(workflow.cores * 0.4), # assign 40% of max cores
+    threads: int(workflow.cores * 0.4)  # assign 40% of max cores
     shell:
         "if [ {params.fivep_adapter} != None ]; then "
         "fivep=`echo -g {params.fivep_adapter}`; "
@@ -152,7 +155,7 @@ rule star_mapping:
         outprefix=lambda w, output: f"{os.path.splitext(output.bam)[0]}_",
     log:
         path="results/mapped/log/{sample}.log",
-    threads: int(workflow.cores * 0.2), # assign 20% of max cores
+    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "STAR "
         "--runThreadN {threads} "
@@ -177,12 +180,12 @@ rule mapping_sorted_bam:
     conda:
         "../envs/samtools.yml"
     log:
-        "results/mapped/log/samtools_{sample}.log"
-        # os.path.join(output_dir, "mapping/log/samtools_sort_{sample}.stderr")
-    message: """--- Samtools sort and index bam files."""
+        "results/mapped/log/samtools_{sample}.log",
+    message:
+        """--- Samtools sort and index bam files."""
     params:
         tmp="results/mapped/sort_{sample}_tmp",
-    threads: int(workflow.cores * 0.2), # assign 20% of max cores
+    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "samtools sort -@ {threads} -O bam -T {params.tmp} -o {output.bam} {input} 2> {log}; "
         "samtools index -@ {threads} {output.bam} 2>> {log}"
@@ -204,7 +207,7 @@ rule umi_dedup:
     params:
         tmp="results/deduplicated/sort_{sample}_tmp",
         default=config["umi_dedup"],
-    threads: int(workflow.cores * 0.2), # assign 20% of max cores
+    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     log:
         path="results/deduplicated/log/{sample}.log",
         stderr="results/deduplicated/log/{sample}.stderr",
@@ -253,7 +256,7 @@ rule filter_bam:
         "../envs/filter_bam.yml"
     params:
         defaults=config["bedtools_intersect"]["defaults"],
-    threads: int(workflow.cores * 0.2), # assign 20% of max cores
+    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "intersectBed -abam {input.bam} -b {input.gff} {params.defaults} | "
         "samtools sort -@ {threads} > {output.bam} 2> {log.path}; "
@@ -265,30 +268,26 @@ rule filter_bam:
 # -----------------------------------------------------
 rule extract_mapping_length:
     input:
-        get_bam,
+        bam=get_bam,
     output:
-        "results/{mapping_status}/length_dist/{sample}_length_dist.tsv",
-    message: """--- Extract mapping length of BAM input: {wildcards.mapping_status}/{wildcards.sample}.bam"""
+        tsv="results/{mapping_status}/length_dist/{sample}_length_dist.tsv",
+        pdf="results/{mapping_status}/length_dist/{sample}_length_dist.pdf",
+    message:
+        """--- Extract mapping length of BAM input: {wildcards.mapping_status}/{wildcards.sample}.bam"""
     conda:
-        "../envs/plot_mapping_length.yml",
+        "../envs/plot_mapping_length.yml"
     log:
-        os.path.join("results", "{mapping_status}", "length_dist", "log", "{sample}.log"),
-    params:
-        outdir=os.path.join("results","{mapping_status}", "length_dist"),
-    shell:
-        "workflow/scripts/plot_mapping_length.py -b {input} -o {params.outdir} -s {wildcards.sample} 2> {log}"
+        "results/{mapping_status}/length_dist/{sample}_length_dist.log",
+    script:
+        "../scripts/plot_mapping_length.py"
 
 
 # module to run multiQC on input + processed files
 # -----------------------------------------------------
 rule multiqc:
     input:
-        expand(
-            "results/fastqc_clipped/{sample}_fastqc.html",
-            sample=samples.index),
-        expand(
-            "results/clipped/{sample}.fastq.gz",
-            sample=samples.index),
+        expand("results/fastqc_clipped/{sample}_fastqc.html", sample=samples.index),
+        expand("results/clipped/{sample}.fastq.gz", sample=samples.index),
         expand(
             "results/umi_extraction/{sample}.fastq.gz",
             sample=samples.index,
