@@ -47,12 +47,6 @@ include: "rules/preprocessing.smk"
 include: "rules/postprocessing.smk"
 
 
-# set shell configs
-# -----------------------------------------------------
-shell.executable("bash")
-shell.prefix(f"set -eo pipefail; ")
-
-
 onstart:
     print("\n--- Analysis started...\n")
     print()
