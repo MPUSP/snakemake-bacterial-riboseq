@@ -1,7 +1,8 @@
 name: umitools
 channels:
-  - bioconda
+  - conda-forge
   - defaults
+  - bioconda
 dependencies:
   - bioconda::umi_tools #=1.1.4
   - pysam #=0.21.0
