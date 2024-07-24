@@ -277,7 +277,7 @@ rule extract_mapping_length:
     conda:
         "../envs/plot_mapping_length.yml"
     log:
-        "results/{mapping_status}/length_dist/{sample}_length_dist.log",
+        path="results/{mapping_status}/length_dist/log/{sample}_length_dist.log",
     script:
         "../scripts/plot_mapping_length.py"
 

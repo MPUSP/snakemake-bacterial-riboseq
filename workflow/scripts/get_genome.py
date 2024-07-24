@@ -128,7 +128,7 @@ if error:
         "Location or format of the supplied genome files was not correct, quit"
     )
 else:
-    log += [f"Module finished successfully\n"]
+    log += ["Module finished successfully\n"]
     log = ["GET_GENOME: " + i for i in log]
     with open(output_log, "w") as log_file:
         log_file.write("\n".join(log))
