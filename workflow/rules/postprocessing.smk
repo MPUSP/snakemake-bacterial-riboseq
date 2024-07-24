@@ -22,7 +22,7 @@ rule extract_mRNA_features:
         "../scripts/extract_features.py"
 
 
-# module to process annotated and predicted ORFs
+# module to process annotated ORFs
 # -----------------------------------------------------
 rule annotate_orfs:
     params:
@@ -37,7 +37,7 @@ rule annotate_orfs:
     conda:
         "../envs/r_orfik.yml"
     message:
-        """--- Listing annotated and potential new ORFs."""
+        """--- Preparing annotated ORFs."""
     log:
         path="results/annotate_orfs/log/log.txt",
     script:
