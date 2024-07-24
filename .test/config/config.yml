@@ -5,6 +5,13 @@ get_genome:
   assembly: "GCF_000006785.2"
   fasta: Null
   gff: Null
+  gff_source_type:
+    [
+      "RefSeq": "gene",
+      "RefSeq": "pseudogene",
+      "RefSeq": "CDS",
+      "Protein Homology": "CDS",
+    ]
 
 cutadapt:
   fivep_adapter: Null
