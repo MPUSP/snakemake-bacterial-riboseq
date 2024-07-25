@@ -67,13 +67,10 @@ annotate_orfs:
 shift_reads:
   window_size: 30
   read_length: [27, 45]
-  # rpf_read_length: [30, 45]
-  # qti_read_length: [27, 45]
-  rnaseq_read_length: [0, 1000]
   end_alignment: "3prime"
-  shift_table: "config/shift_table/shift_table.csv"
-  export_bam: False
+  shift_table: Null
   export_bigwig: True
+  export_ofst: False
   skip_shifting: False
   skip_length_filter: True
 

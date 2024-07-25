@@ -52,8 +52,9 @@ rule shift_reads:
         bai="results/filtered_bam/{sample}.bam.bai",
         granges=rules.annotate_orfs.output.granges,
     output:
-        ofst_orig="results/shift_reads/{sample}_orig.ofst",
-        ofst_filt="results/shift_reads/{sample}_filt.ofst",
+        bam="results/shift_reads/{sample}.bam",
+        png_preshift="results/shift_reads/{sample}_preshift.png",
+        png_postshift="results/shift_reads/{sample}_postshift.png",
         shift="results/shift_reads/{sample}_shift.csv",
     conda:
         "../envs/r_orfik.yml"
