@@ -19,7 +19,7 @@ rule fastqc:
     threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "mkdir -p {output.report};"
-        "fastqc --nogroup -extract --threads {threads} -o {output.report} {input} > {log}"
+        "fastqc --nogroup --extract --quiet --threads {threads} -o {output.report} {input} > {log}"
 
 
 # module to trim adapters from reads
