@@ -58,11 +58,6 @@ deeptools:
 
 annotate_orfs:
   window_size: 30
-  sorf_max_length: 300
-  sorf_min_length: 45
-  orf_start_codon_table: 11
-  orf_stop_codon: ["TAA", "TAG", "TGA"]
-  orf_longest_only: False
 
 shift_reads:
   window_size: 30

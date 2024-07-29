@@ -96,10 +96,7 @@ seqinfo(genome_dna) <- seqinfo(txdb$result)
 list_cds <- loadRegion(txdb$result, "cds", by = "tx")
 list_tx <- loadRegion(txdb$result, "mrna", by = "tx")
 
-# filter out ORFs that
-# - are below a certain size threshold = annotated sORFs
-# - have no old_locus_tag = predicted new sORFs
-# - are only predicted with this pipeline = completely new sORFs
+# parse genome gff file GFF
 df_gff <- genome_gff %>%
   read_tsv(
     comment = "#",
@@ -118,9 +115,6 @@ df_gff <- genome_gff %>%
   ) %>%
   filter(name %in% names(list_cds))
 
-list_cds <- list_cds[filter(df_gff, width > sorf_max_length)$name]
-list_tx <- list_tx[filter(df_gff, width > sorf_max_length)$name]
-
 # make leader and start codon regions
 list_leader <- startCodons(list_cds) %>%
   extendLeaders(extension = window_size)
@@ -136,10 +130,7 @@ df_annotated_orfs <- list_cds %>%
   mutate(
     sequence = as.character(list_cds_seq),
     start_codon = str_sub(sequence, 1, 3),
-    stop_codon = str_sub(sequence, -3, -1),
-    intergenic = FALSE,
-    intragenic = FALSE,
-    partial_overlap = FALSE
+    stop_codon = str_sub(sequence, -3, -1)
   )
 
 # export results
