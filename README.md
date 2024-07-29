@@ -31,7 +31,28 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 
 ## Workflow overview
 
-TODO: include first part of the figure here.
+<!-- include logo-->
+<img src="resources/images/logo.png" align="center" />
+
+----------
+
+This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
+The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
+
+ 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+    1. Using automatic download from NCBI with a `RefSeq` ID
+    2. Using user-supplied files
+ 2. Check quality of input sequencing data (`FastQC`)
+ 3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
+ 4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
+ 5. Map reads to the reference genome (`STAR aligner`)
+ 6. Sort and index for aligned seq data (`samtools`)
+ 7. Filter reads by feature type (`bedtools`)
+ 8. Generate summary report for all processing steps (`MultiQC`)
+ 9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
+ 10. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
+
+If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
 
 ## Installation
 
