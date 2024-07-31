@@ -34,6 +34,7 @@ rule annotate_orfs:
     output:
         df_annotated_orfs="results/annotate_orfs/df_annotated_orfs.csv",
         granges="results/annotate_orfs/granges.RData",
+        txdb="results/get_genome/genome.gff.db",
     conda:
         "../envs/r_orfik.yml"
     message:
@@ -67,3 +68,30 @@ rule shift_reads:
         path="results/shift_reads/log/{sample}.log",
     script:
         "../scripts/shift_reads.R"
+
+
+# module to calculate feature-wise statistics
+# -----------------------------------------------------
+rule feature_stats:
+    input:
+        fasta=rules.get_genome.output.fasta,
+        gff_rna=rules.extract_features.output.gff,
+        gff_cds=rules.extract_mRNA_features.output.gff,
+        granges=rules.annotate_orfs.output.granges,
+        orfs=rules.annotate_orfs.output.df_annotated_orfs,
+        txdb=rules.annotate_orfs.output.txdb,
+        bam_filtered=expand("results/filtered_bam/{sample}.bam", sample=samples.index),
+        bam_shifted=expand("results/shift_reads/{sample}.bam", sample=samples.index),
+    output:
+        csv="results/feature_stats/feature_stats.csv",
+    conda:
+        "../envs/r_orfik.yml"
+    message:
+        """--- Calculating feature-wise statistics."""
+    params:
+        config["feature_stats"],
+    threads: workflow.cores
+    log:
+        path="results/feature_stats/log/stats.log",
+    script:
+        "../scripts/feature_stats.R"

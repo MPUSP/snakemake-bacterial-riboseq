@@ -51,11 +51,6 @@ extract_features:
 bedtools_intersect:
   defaults: ["-v ", "-s ", "-f 0.2"]
 
-deeptools:
-  libtype: "sense" # parameter not used yet. Only sense direction currently handled # TODO #
-  bin_size: 1
-  normalize: "CPM"
-
 annotate_orfs:
   window_size: 30
 

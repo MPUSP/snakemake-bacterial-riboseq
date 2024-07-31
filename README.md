@@ -50,7 +50,8 @@ The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stab
  7. Filter reads by feature type (`bedtools`)
  8. Generate summary report for all processing steps (`MultiQC`)
  9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
- 10. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
+ 10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
+ 11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
 
 If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
 
