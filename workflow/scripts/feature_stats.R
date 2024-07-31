@@ -15,14 +15,6 @@ suppressWarnings({
 })
 
 
-# CONFIGURATION
-# ------------------------------
-sm_params <- snakemake@params[[1]]
-for (param in names(sm_params)) {
-  assign(param, sm_params[[param]], envir = .GlobalEnv)
-}
-
-
 # IMPORT FILES
 # ------------------------------
 

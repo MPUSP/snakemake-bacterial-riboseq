@@ -88,8 +88,6 @@ rule feature_stats:
         "../envs/r_orfik.yml"
     message:
         """--- Calculating feature-wise statistics."""
-    params:
-        config["feature_stats"],
     threads: workflow.cores
     log:
         path="results/feature_stats/log/stats.log",
