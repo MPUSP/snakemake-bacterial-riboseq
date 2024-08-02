@@ -17,7 +17,7 @@ samples = (
 def get_final_output():
     targets = []
     targets.append("results/multiqc/multiqc_report.html")
-    targets.append("results/feature_stats/feature_stats.csv")
+    targets.append("results/report/report.pdf")
     targets.append(
         expand(
             "results/{mapping_status}/length_dist/{sample}_length_dist.tsv",

@@ -93,3 +93,44 @@ rule feature_stats:
         path="results/feature_stats/log/stats.log",
     script:
         "../scripts/feature_stats.R"
+
+
+# module to report results as HTML notebook
+# -----------------------------------------------------
+rule report_html:
+    input:
+        orfs_annotated=rules.annotate_orfs.output.df_annotated_orfs,
+        orfs_features=rules.feature_stats.output.csv,
+        granges=rules.annotate_orfs.output.granges,
+        fasta=rules.get_genome.output.fasta,
+        bam_filtered=expand("results/filtered_bam/{sample}.bam", sample=samples.index),
+        bam_shifted=expand("results/shift_reads/{sample}.bam", sample=samples.index),
+    output:
+        html="results/report/report.html",
+    conda:
+        "../envs/r_orfik.yml"
+    message:
+        """--- Writing HTML report with workflow results."""
+    params:
+        config["report"],
+    log:
+        path="results/report/log/report_html.log",
+    script:
+        "../notebooks/report.Rmd"
+
+
+# module to convert HTML to PDF output
+# -----------------------------------------------------
+rule report_pdf:
+    input:
+        html=rules.report_html.output.html,
+    output:
+        pdf="results/report/report.pdf",
+    conda:
+        "../envs/report_pdf.yml"
+    message:
+        """--- Converting HTML report to PDF."""
+    log:
+        path="results/report/log/report_pdf.log",
+    shell:
+        "weasyprint -v {input.html} {output.pdf} &> {log.path}"

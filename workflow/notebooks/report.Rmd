@@ -1,0 +1,798 @@
+---
+title: "Results of the `snakemake-bacterial-riboseq` workflow"
+auhtor: "`r sessionInfo()$platform`"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+   rmd: "report.Rmd"
+output:
+  html_document:
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+    number_sections: yes
+    df_print: paged
+---
+
+----------
+
+# Background
+
+This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
+The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
+
+ 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+    1. Using automatic download from NCBI with a `RefSeq` ID
+    2. Using user-supplied files
+ 2. Check quality of input sequencing data (`FastQC`)
+ 3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
+ 4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
+ 5. Map reads to the reference genome (`STAR aligner`)
+ 6. Sort and index for aligned seq data (`samtools`)
+ 7. Filter reads by feature type (`bedtools`)
+ 8. Generate summary report for all processing steps (`MultiQC`)
+ 9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
+ 10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
+ 11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
+
+If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
+
+----------
+
+# Prerequisites
+
+## Packages
+
+Loaded required R packages:
+
+- `tidyverse`
+- `GenomicRanges`
+- `GenomicFeatures`
+- `ORFik`
+- `ggrepel`
+- `GGally`
+
+```{r, echo = FALSE, warning = FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(GenomicRanges)
+  library(GenomicFeatures)
+  library(ORFik)
+  library(ggrepel)
+  library(GGally)
+})
+```
+
+
+```{r, echo = FALSE}
+# import some required parameters
+sm_params <- snakemake@config
+export_figures <- sm_params$report$export_figures
+figres <- sm_params$report$figure_resolution
+figwidth <- sm_params$report$figure_width / 125
+figheight <- sm_params$report$figure_height / 125
+export_dir <- str_remove(snakemake@output$html, "report.html$")
+export_plots <- paste0(export_dir, sm_params$report$export_dir)
+
+# create sub-dirs for figures
+dir.create(export_plots, showWarnings = FALSE)
+
+# custom ggplot2 theme that is reused for all later plots
+custom_colors <- c("#E7298A", "#66A61E", "#E6AB02", "#7570B3", "#B3B3B3", "#1B9E77", "#D95F02", "#A6761D")
+custom_range <- function(n = 5) {
+  colorRampPalette(custom_colors[c(1, 5, 2)])(n)
+}
+
+custom_theme <- function(base_size = 12, base_line_size = 1.0, base_rect_size = 1.0, ...) {
+  theme_light(base_size = base_size, base_line_size = base_line_size, base_rect_size = base_rect_size) + theme(
+    title = element_text(colour = grey(0.4), size = 10),
+    plot.margin = unit(c(12, 12, 12, 12), "points"),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.ticks = element_line(colour = grey(0.4), linetype = "solid", lineend = "round"),
+    axis.text.x = element_text(colour = grey(0.4), size = 10),
+    axis.text.y = element_text(colour = grey(0.4), size = 10),
+    panel.grid.major = element_line(linewidth = 0.6, linetype = "solid", colour = grey(0.9)),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(linetype = "solid", colour = grey(0.4), fill = NA, linewidth = 1.0),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(colour = grey(0.4), size = 10, margin = unit(rep(3, 4), "points")),
+    legend.text = element_text(colour = grey(0.4), size = 10),
+    legend.title = element_blank(),
+    legend.background = element_blank(),
+    legend.key.size = unit(0.4, "cm"),
+    ...
+  )
+}
+
+# set graphical parameter for subfigure labels
+list_fontpars <- list(face = "plain", size = 14)
+
+# function to export an image as svg and png
+save_plot <- function(pl, path = "../figures/", width = 6, height = 6) {
+  pl_name <- deparse(substitute(pl))
+  svg(
+    filename = paste0(path, pl_name, ".svg"),
+    width = width, height = height
+  )
+  print(pl)
+  dev.off()
+  png(
+    filename = paste0(path, pl_name, ".png"),
+    width = width * 125, height = height * 125, res = figres
+  )
+  print(pl)
+  invisible(capture.output(dev.off()))
+}
+```
+
+## Result tables
+
+Imported results:
+
+- table with annotated ORFs
+- table with translation features for annotated ORFs
+- read files in `*.bam` format before shifting
+- read files in `*.bam` format after shifting
+- list of annotated ORFs, start regions, etc. in `granges` format
+- genome sequence on `*.fasta` format
+
+```{r, echo = FALSE}
+# tables
+df_annotated <- read_csv(snakemake@input$orfs_annotated, show_col_types = FALSE)
+df_features <- read_csv(snakemake@input$orfs_features, show_col_types = FALSE)
+df_features <- mutate(df_features, sample_name = str_remove(sample_name, "\\.bam$"))
+
+# import original and processed read data
+bam <- lapply(snakemake@input[["bam_filtered"]], ORFik::readBam)
+names(bam) <- str_split_i(snakemake@input[["bam_filtered"]], "\\/", -1) %>%
+  str_remove("\\.bam$")
+
+bam_shift <- lapply(snakemake@input[["bam_shifted"]], ORFik::readBam)
+names(bam_shift) <- str_split_i(snakemake@input[["bam_shifted"]], "\\/", -1) %>%
+  str_remove("\\.bam$")
+
+sample_names <- names(bam)
+
+# GRanges
+load(snakemake@input$granges)
+
+# Fasta genome sequence
+genome_dna <- Biostrings::readDNAStringSet(snakemake@input$fasta)
+seqinfo(genome_dna) <- seqinfo(list_cds)
+```
+
+Example with first rows of the ORF-based statistical summary:
+
+```{r, echo = FALSE}
+head(df_features)
+```
+
+----------
+
+# Preprocessing
+
+## Results from MultiQC
+
+- input for the first part are raw, short-read sequencing files in `*.fastq.gz` format
+- the input files are processed as outlined above in the module overview
+- this includes predominantly read alignment using `STAR`, optional UMI deduplication, and statistical analysis
+- output are mapped and filtered reads in `*.bam` file format
+- for diagnostics, the pipeline runs `MultiQC` at the end of the preprocessing module
+- a detailed report of read quality and mapping stats can be found at `./results/multiqc/multiqc_report.html`
+
+# Postprocessing
+
+## Processing sequencing data
+
+### Read number of input samples
+
+- input for module 2 are the processed `*.bam` files from RNA-Seq, RPF, and/or QTI experiments from module 1
+- the figure shows the read number per input file color coded by type of input
+- it also shows the comparison of read number before and after filtering and shifting
+- the default behavior is to filter reads by length, as shorter reads are less reliable
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_read_number <- c(bam, bam_shift) %>%
+  lapply(length) %>%
+  unlist() %>%
+  enframe() %>%
+  mutate(status = rep(c("original", "filtered"), each = length(sample_names))) %>%
+  ggplot(aes(y = fct_rev(name), x = value, fill = status)) +
+  geom_col(position = "dodge") +
+  geom_text(
+    position = position_dodge(0.9), hjust = 0, size = 3,
+    aes(x = value + max(value / 100), label = paste0(round(value / 10^6, 1), "M"), color = status)
+  ) +
+  labs(
+    x = "n total reads", y = "",
+    title = "Read number for all samples",
+    subtitle = "color: before and after filtering by size"
+  ) +
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors)
+
+if (export_figures) {
+  save_plot(
+    plot_read_number,
+    path = export_plots,
+    width = figwidth, height = figheight
+  )
+}
+
+print(plot_read_number)
+```
+
+### Read length distribution
+
+- this figure shows read length distribution for all samples and data types
+- mapped read lengths from ribosome profiling data are usually variable
+- often one can see a bimodal distribution, with the larger reads being more reliable (representing genuine footprints)
+- shorter read fractions (e.g. shorter than a regular footprint) are ususally discarded
+- the default behavior of the workflow is to discard RPF reads below 30 nt
+- the exact length threshold for reads should be determined by the user after visual inspection
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+df_read_lengths <- lapply(bam, function(file) {
+  readWidths(file) %>%
+    table() %>%
+    enframe(name = "read_length", value = "read_count") %>%
+    mutate(read_count = as.numeric(read_count))
+}) %>%
+  bind_rows(.id = "name")
+
+plot_read_length <- df_read_lengths %>%
+  group_by(name) %>%
+  mutate(read_count = read_count / sum(read_count) * 100) %>%
+  ggplot(aes(
+    x = as.numeric(read_length),
+    y = read_count
+  )) +
+  geom_step() +
+  labs(
+    x = "read length", y = "frequency (% total reads)",
+    title = "Read lengths distribution, per sample"
+  ) +
+  custom_theme() +
+  facet_wrap(~name) +
+  scale_color_manual(values = custom_colors)
+
+if (export_figures) {
+  save_plot(
+    plot_read_length,
+    path = export_plots,
+    width = figwidth, height = figheight
+  )
+}
+
+print(plot_read_length)
+```
+
+### Offset of read fractions
+
+- reads from ribosome profiling experiments (and similar protocols) show a characteristic offset
+- this originates from the ribosome occupying a variable portion of the transcript and preventing it from degradation
+- in order to make read fractions comparable, they need to be aligned to one end and shifted by a certain offset
+- the 5' end or the 3' end can be used for alignment and shifting
+- the following heat maps show read density by read length fraction, allowing visual inspection of the offset
+- the default window is 30 nt around the start codon
+- reads from all annotated ORFs are overlaid (meta map)
+
+```{r, echo = FALSE, warning = FALSE}
+plot_hitmaps_preshift <- snakemake@input$bam_shifted %>%
+  str_replace(".bam$", "_preshift.png") %>%
+  paste0(getwd(), "/", .)
+
+plot_hitmaps_postshift <- snakemake@input$bam_shifted %>%
+  str_replace(".bam$", "_postshift.png") %>%
+  paste0(getwd(), "/", .)
+```
+
+```{r, echo = FALSE, warning = FALSE, out.width='50%'}
+knitr::include_graphics(plot_hitmaps_preshift, error = FALSE, rel_path = FALSE)
+```
+
+----------
+
+### Read shifting
+
+- the default behavior is to shift reads based on automatic identification of the offset
+- shift tables are stored in `results/shift_reads/<sample>_shift.csv`
+- shift tables can also be supplied manually by the user, overriding the automatic shifting
+- after read shifting, the peak of highest read density should align with the start codon
+- the following figures show read density after shifting
+
+```{r, echo = FALSE, warning = FALSE, out.width='50%'}
+knitr::include_graphics(plot_hitmaps_postshift, error = FALSE, rel_path = FALSE)
+```
+
+### Three-nucleotide periodicity
+
+- ribosome footprints are usually aligned to the P-site (peptidyl site) of the translating ribosome
+- ribosomes move on the mRNA one codon at a time, producing characteristic 3-nt periodicity
+- periodicity can be visualized with a density map of read count per position around start/stop codons
+- intergenic regions should not show this pattern
+- coverage on frame zero should be higher than frame one and two (see right hand summary)
+- if not, consider supplying manual shift table (see previous section [Read shifting](#read-shifting))
+- 3-nt periodicity is also used as a feature in ORF prediction (`ORFscore`)
+- this feature is only calculated from RPF data, and no figure is produced if RPF data is missing
+
+```{r, echo = FALSE, warning = FALSE}
+start_window <- list_start %>%
+  extendLeaders(20) %>%
+  extendTrailers(120) %>%
+  trim() %>%
+  {
+    .[as.logical(width(.) == 203)]
+  }
+
+stop_window <- stopCodons(list_cds) %>%
+  extendLeaders(150) %>%
+  extendTrailers(50) %>%
+  trim() %>%
+  {
+    .[as.logical(width(.) == 203)]
+  }
+```
+
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+df_start_cov <- lapply(sample_names, function(x) {
+  exceeding_window <- which(unlist(end(start_window)) > max(unlist((end(list_tx)))))
+  if (length(exceeding_window)) start_window <- start_window[-exceeding_window]
+  bam_shift[[x]] %>%
+    metaWindow(
+      start_window,
+      withFrames = TRUE,
+      forceUniqueEven = FALSE
+    )
+}) %>%
+  bind_rows(.id = "sample") %>%
+  mutate(position = position + 50) %>%
+  group_by(position, frame) %>%
+  summarize(score = mean(score, na.rm = TRUE), .groups = "drop")
+
+plot_3nt_start <- df_start_cov %>%
+  ggplot(aes(x = position, y = score)) +
+  geom_rect(
+    data = filter(df_start_cov, score == max(score)),
+    aes(xmin = -50, xmax = 0, ymin = max(score) * 0.8, ymax = max(score)), fill = "#E5E5E599"
+  ) +
+  geom_rect(
+    data = filter(df_start_cov, score == max(score)),
+    aes(xmin = 0, xmax = 150, ymin = max(score) * 0.8, ymax = max(score)), fill = "#bdeb8b99"
+  ) +
+  geom_text(
+    data = filter(df_start_cov, score == max(score)),
+    aes(x = -25, y = max(score) * 0.9, label = "intergenic"), col = grey(0.5)
+  ) +
+  geom_text(
+    data = filter(df_start_cov, score == max(score)),
+    aes(x = 75, y = max(score) * 0.9, label = "ORF"), col = grey(0.5)
+  ) +
+  geom_vline(xintercept = 0, col = grey(0.5), linetype = 2) +
+  geom_line(color = custom_colors[1]) +
+  custom_theme() +
+  labs(
+    title = "3-nt periodicity around START codon",
+    subtitle = "average of all annotated ORFs and replicates"
+  ) +
+  coord_cartesian(xlim = c(-50, 150))
+
+plot_frame_start <- df_start_cov %>%
+  filter(position > 0) %>%
+  ggplot(aes(x = factor(frame), y = score)) +
+  geom_jitter(width = 0.3, col = grey(0.5, 0.5)) +
+  geom_boxplot(fill = "white", col = custom_colors[1], outlier.shape = "") +
+  labs(x = "frame", y = "score (ORF only)") +
+  custom_theme()
+
+plot_start_cov <- cowplot::plot_grid(
+  plot_3nt_start, plot_frame_start,
+  ncol = 2, rel_widths = c(3, 1), align = "h"
+)
+
+save_plot(
+  plot_start_cov,
+  path = export_plots,
+  width = figwidth, height = figheight
+)
+
+print(plot_start_cov)
+```
+
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+df_stop_cov <- lapply(sample_names, function(x) {
+  exceeding_window <- which(unlist(end(stop_window)) > max(unlist((end(list_tx)))))
+  if (length(exceeding_window)) stop_window <- stop_window[-exceeding_window]
+  bam_shift[[x]] %>%
+    metaWindow(
+      stop_window,
+      withFrames = TRUE,
+      forceUniqueEven = FALSE
+    )
+}) %>%
+  bind_rows(.id = "sample") %>%
+  mutate(position = position - 50) %>%
+  group_by(position, frame) %>%
+  summarize(score = mean(score, na.rm = TRUE), .groups = "drop")
+
+plot_3nt_stop <- df_stop_cov %>%
+  ggplot(aes(x = position, y = score)) +
+  geom_rect(
+    data = filter(df_stop_cov, score == max(score)),
+    aes(xmin = -150, xmax = 0, ymin = max(score) * 0.8, ymax = max(score)), fill = "#bdeb8b99"
+  ) +
+  geom_rect(
+    data = filter(df_stop_cov, score == max(score)),
+    aes(xmin = 0, xmax = 50, ymin = max(score) * 0.8, ymax = max(score)), fill = "#E5E5E599"
+  ) +
+  geom_text(
+    data = filter(df_stop_cov, score == max(score)),
+    aes(x = -75, y = max(score) * 0.9, label = "ORF"), col = grey(0.5)
+  ) +
+  geom_text(
+    data = filter(df_stop_cov, score == max(score)),
+    aes(x = 25, y = max(score) * 0.9, label = "intergenic"), col = grey(0.5)
+  ) +
+  geom_vline(xintercept = 0, col = grey(0.5), linetype = 2) +
+  geom_line(color = custom_colors[1]) +
+  custom_theme() +
+  labs(
+    title = "3-nt periodicity around STOP codon",
+    subtitle = "average of all annotated ORFs and replicates"
+  ) +
+  coord_cartesian(xlim = c(-150, 50))
+
+plot_frame_stop <- df_stop_cov %>%
+  filter(position < 0) %>%
+  ggplot(aes(x = factor(frame), y = score)) +
+  geom_jitter(width = 0.3, col = grey(0.5, 0.5)) +
+  geom_boxplot(fill = "white", col = custom_colors[1], outlier.shape = "") +
+  labs(x = "frame", y = "score (ORF only)") +
+  custom_theme()
+
+plot_stop_cov <- cowplot::plot_grid(
+  plot_3nt_stop, plot_frame_stop,
+  ncol = 2, rel_widths = c(3, 1), align = "h"
+)
+
+save_plot(
+  plot_stop_cov,
+  path = export_plots,
+  width = figwidth, height = figheight
+)
+
+print(plot_stop_cov)
+```
+
+
+## Gene-based analysis
+
+### Genome overview
+
+- summary of basic statistics about the target genome
+- figure shows genome organisation in terms of chromosomes,
+  percent coding DNA, and GC content
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+df_genome_summary <- left_join(
+  by = join_by(seqnames),
+  genome_dna %>%
+    sapply(length) %>%
+    enframe(name = "seqnames", value = "total_length"),
+  list_cds %>%
+    as_tibble() %>%
+    group_by(seqnames) %>%
+    summarize(coding = sum(width))
+) %>%
+  mutate(intergenic = total_length - coding)
+
+plot_genome_stats <- cowplot::plot_grid(
+  nrow = 2, rel_heights = c(0.4, 0.6), align = "v",
+  df_genome_summary %>%
+    group_by(seqnames) %>%
+    arrange(desc(total_length)) %>%
+    mutate(rank = factor(n(), max(n():1))) %>%
+    pivot_longer(coding:intergenic, names_to = "type", values_to = "length") %>%
+    mutate(
+      type = factor(type, c("intergenic", "coding")),
+      percent = round(length / total_length * 100, 1)
+    ) %>%
+    ggplot(aes(x = length / 10^6, y = rank, fill = type)) +
+    geom_col(width = 0.8) +
+    geom_text(
+      aes(label = seqnames, x = 0),
+      nudge_x = df_genome_summary$total_length[1] / 10^6 * 0.15,
+      size = 3, col = "white"
+    ) +
+    geom_text(
+      aes(label = paste0(percent, "%")),
+      position = position_stack(vjust = 0.8),
+      size = 3, col = "white"
+    ) +
+    lims(x = c(0, df_genome_summary$total_length[1] / 10^6)) +
+    labs(x = "chromosome length [Mbases]", y = "") +
+    custom_theme(legend.position = "top") +
+    theme(plot.margin = unit(c(12, 12, 6, 12), "point")) +
+    scale_fill_manual(values = c(alpha(custom_colors[8], 0.6), custom_colors[8]), drop = FALSE),
+  genome_dna %>%
+    gcContent(list_cds, .) %>%
+    enframe() %>%
+    ggplot() +
+    geom_histogram(
+      aes(x = value, y = after_stat(count / sum(count))),
+      fill = custom_colors[8], bins = 30, width = 1.1
+    ) +
+    lims(x = c(0.25, 0.75), y = c(0, 0.25)) +
+    labs(x = "GC content CDSs [%]", y = "") +
+    custom_theme(legend.position = "none") +
+    theme(plot.margin = unit(c(6, 12, 12, 12), "point"))
+)
+
+if (export_figures) {
+  save_plot(
+    plot_genome_stats,
+    path = export_plots,
+    width = figwidth, height = figheight
+  )
+}
+
+print(plot_genome_stats)
+```
+
+### Length distribution
+
+- annotated ORFs are extracted from the genome annotation
+- this figure compares the length distribution of annotated ORFs, broken down by start codon
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+list_start_codons <- c("ATA", "ATG", "GTG", "TTG")
+
+plot_orfs_anno <- df_annotated %>%
+  filter(width <= quantile(width, probs = 0.99)) %>%
+  mutate(start_codon = ifelse(start_codon %in% list_start_codons, start_codon, "other")) %>%
+  mutate(start_codon = factor(start_codon, c(list_start_codons, "other"))) %>%
+  ggplot(aes(x = width, fill = start_codon)) +
+  geom_histogram(bins = 30) +
+  labs(
+    x = "length (nt)",
+    title = paste0("Length distribution of annotated ORFs (n = ", nrow(df_annotated), ")"),
+    subtitle = "Largest 1% ORF fraction was excluded"
+  ) +
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors, drop = FALSE)
+
+if (export_figures) {
+  save_plot(
+    plot_orfs_anno,
+    path = export_plots,
+    width = figwidth, height = figheight
+  )
+}
+
+print(plot_orfs_anno)
+```
+
+
+## Riboseq features
+
+- RiboSeq features are calculated per annotated gene/ORF
+- typical features that the workflow computes are count-based scores, see next section
+- the workflow also computes 'pause score'-like statistics (*not implemented yet*)
+
+### Count-based summary statistic
+
+- `count` features simply sum up mapped NGS reads per ORF
+- `fpkm` features represent normalized counts (Fragments Per Kilobase per Million mapped fragments)
+- FPKM is a more generalized term for RPKM (Reads Per Kilobase per Million mapped reads)
+- FPKM takes read pairs into account; however this workflow is only tested with single-end read data
+- throughout this workflow, FPKM is used interchangeably with RPKM
+- `disengagementScore`, `floss`, `ioScore`, `entropy`, `RRS`, and `RSS` are described in detail in the `ORFik` package
+
+#### Distribution of scores {-}
+
+- histograms show the distribution of individual scores
+- samples are overlaid and color coded
+- note that scores have been log10 transformed and re-scaled for easy comparison
+- the x-axis is therefore not drawn to scale (individual scores can have different range)
+
+```{r, echo = FALSE, warning = FALSE}
+df_feat_long <- df_features %>%
+  dplyr::select(
+    group_name, sample_name, countRFP, cpmRFP, fpkmRFP, floss,
+    entropyRFP, disengagementScores, RRS, RSS, ORFScores, ioScore,
+    startCodonCoverage, startRegionCoverage, startRegionRelative
+  ) %>%
+  mutate(across(!c("group_name", "sample_name"), ~ log10(abs(.x)))) %>%
+  pivot_longer(cols = !c("group_name", "sample_name"), names_to = "feature", values_to = "value")
+```
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
+plot_data_features <- df_feat_long %>%
+  filter(!is.infinite(value), !is.na(value)) %>%
+  group_by(sample_name, feature) %>%
+  mutate(bins = cut_interval(value, n = 40, labels = FALSE)) %>%
+  group_by(bins, .add = TRUE) %>%
+  summarize(freq = n(), .groups = "drop") %>%
+  ggplot(aes(x = bins, y = freq, color = sample_name)) +
+  geom_step() +
+  labs(
+    title = "Distribution of log10 transformed features",
+    subtitle = "x-axis is rescaled for comparibility",
+    x = "log10 normalized score", y = "frequency"
+  ) +
+  custom_theme(aspect.ratio = 1, legend.position = "bottom") +
+  facet_wrap(~feature) +
+  theme(axis.text.x = element_blank()) +
+  scale_color_manual(values = rep_len(
+    custom_colors,
+    length.out = length(sample_names)
+  ))
+
+
+if (export_figures) {
+  save_plot(
+    plot_data_features,
+    path = export_plots,
+    width = figwidth, height = figwidth
+  )
+}
+
+print(plot_data_features)
+```
+
+#### Correlation of read counts between samples {-}
+
+- figure shows the correlation between samples/replicates for selected scores
+- by default, the selected score is FPKM, different options might be implemented in a future release
+- between-replicate correlation should be higher than between-condition correlation
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
+df_fpkm <- df_features %>%
+  dplyr::select(group_name, sample_name, fpkmRFP) %>%
+  filter(fpkmRFP != 0) %>%
+  mutate(fpkmRFP = log10(fpkmRFP)) %>%
+  pivot_wider(id_cols = group_name, names_from = sample_name, values_from = fpkmRFP) %>%
+  dplyr::select(-group_name)
+
+plot_sample_corr <- ggpairs(df_fpkm) +
+  labs(title = "Correlation of log10 transformed FPKM") +
+  custom_theme()
+
+if (export_figures) {
+  save_plot(
+    plot_sample_corr,
+    path = export_plots,
+    width = figwidth, height = figwidth
+  )
+}
+
+print(plot_sample_corr)
+```
+
+#### Principal component analysis {-}
+
+- figures shows the correlation between samples/replicates for selected scores
+- by default, the selected score is FPKM, different options might be implemented in the next release
+- between-replicate correlation should be higher than between-condition replicationlir
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
+df_pca <- df_fpkm %>%
+  filter(., complete.cases(.)) %>%
+  as.matrix() %>%
+  t() %>%
+  prcomp() %>%
+  {
+    .$x
+  } %>%
+  as_tibble(rownames = "sample_name")
+
+if (!"PC3" %in% colnames(df_pca)) {
+  df_pca$PC3 <- 1
+}
+
+plot_pca <- df_pca %>%
+  ggplot(aes(
+    x = PC1, y = PC1, size = PC3, color = sample_name,
+    label = sample_name
+  )) +
+  geom_point() +
+  geom_text_repel(size = 3, point.padding = 10) +
+  labs(
+    title = "PCA of log10 transformed FPKM values",
+    subtitle = "point size encodes PC3, color encodes sample"
+  ) +
+  custom_theme(aspect.ratio = 1, legend.position = "bottom") +
+  scale_color_manual(values = rep_len(
+    custom_colors,
+    length.out = length(sample_names)
+  ))
+
+if (export_figures) {
+  save_plot(
+    plot_pca,
+    path = export_plots,
+    width = figwidth, height = figwidth
+  )
+}
+
+print(plot_pca)
+```
+
+----------
+
+# About this report
+
+## Pipeline
+
+This report was automatically generated by the [snakemake-bacterial-riboseq](https://github.com/MPUSP/snakemake-bacterial-riboseq) pipeline.
+
+For issues, bugs, and feature requests please use the pipeline's [github page](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues).
+
+For all other feedback, contact the author(s).
+
+## Authors
+
+- Dr. Michael Jahn
+  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
+  - ORCID profile: https://orcid.org/0000-0002-3913-153X
+  - github page: https://github.com/m-jahn
+- Dr. Rina Ahmed-Begrich
+  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
+  - ORCID profile: https://orcid.org/0000-0002-0656-1795
+  - github page: https://github.com/rabioinf
+
+Visit the MPUSP github page at https://github.com/MPUSP for more info on this workflow and other projects.
+
+## Data accessability
+
+The following resources were used to generate this report.
+
+**Tables**
+
+- Annotated ORFs: `r snakemake@input$orfs_annotated`
+- Summary statistics for annotated ORFs: `r snakemake@input$orfs_features`
+
+**Genomic Ranges**
+
+- List of annotated ORFs etc.: `r snakemake@input$granges`
+
+**Genome sequence**
+
+- `.fasta` file: `r snakemake@input$fasta`
+
+**Read data**
+
+- filtered `.bam` files: `r snakemake@input[["bam_filtered"]]`
+- shifted `.bam` files: `r snakemake@input[["bam_shifted"]]`
+
+## Configuration
+
+The pipeline configuration file is available at: `config/config.yml`.
+
+```{r, echo = FALSE}
+list_config <- read_lines("config/config.yml")
+list_config <- gsub("\"", "", list_config)
+print(list_config)
+```
+
+## Session Info
+
+Link to the R markdown source that was used to generate this report:
+
+<a download="report.Rmd" href="`r base64enc::dataURI(file = params$rmd, mime = 'text/rmd', encoding = 'base64')`">R Markdown source file</a>
+
+Session info (R base and package versions):
+
+```{r, echo = FALSE}
+sessionInfo()
+```
+
+```{r, echo = FALSE}
+write_lines(
+  "HTML_REPORT: finished writing HTML report successfully",
+  file = "results/report/log/report_html.log"
+)
+```
