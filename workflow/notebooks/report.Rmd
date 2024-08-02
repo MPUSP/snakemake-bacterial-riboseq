@@ -695,7 +695,7 @@ if (!"PC3" %in% colnames(df_pca)) {
 
 plot_pca <- df_pca %>%
   ggplot(aes(
-    x = PC1, y = PC1, size = PC3, color = sample_name,
+    x = PC1, y = PC2, size = PC3, color = sample_name,
     label = sample_name
   )) +
   geom_point() +
