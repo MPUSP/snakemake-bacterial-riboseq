@@ -19,7 +19,7 @@ rule fastqc:
     threads: int(workflow.cores * 0.2)  # assign 20% of max cores
     shell:
         "mkdir -p {output.report};"
-        "fastqc --nogroup -extract --threads {threads} -o {output.report} {input} > {log}"
+        "fastqc --nogroup --extract --quiet --threads {threads} -o {output.report} {input} > {log}"
 
 
 # module to trim adapters from reads
@@ -277,7 +277,7 @@ rule extract_mapping_length:
     conda:
         "../envs/plot_mapping_length.yml"
     log:
-        "results/{mapping_status}/length_dist/{sample}_length_dist.log",
+        path="results/{mapping_status}/length_dist/log/{sample}_length_dist.log",
     script:
         "../scripts/plot_mapping_length.py"
 

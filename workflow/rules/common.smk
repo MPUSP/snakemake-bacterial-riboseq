@@ -17,16 +17,13 @@ samples = (
 def get_final_output():
     targets = []
     targets.append("results/multiqc/multiqc_report.html")
+    targets.append("results/report/report.pdf")
     targets.append(
         expand(
             "results/{mapping_status}/length_dist/{sample}_length_dist.tsv",
             mapping_status=["mapped", "deduplicated", "filtered_bam"],
             sample=samples.index,
         )
-    )
-    targets.append("results/get_genome/mRNA_features.gff")
-    targets.append(
-        expand("results/shift_reads/{sample}_shift.csv", sample=samples.index)
     )
     return targets
 

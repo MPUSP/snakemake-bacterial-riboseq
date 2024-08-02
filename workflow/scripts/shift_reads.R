@@ -1,12 +1,14 @@
 # LOAD PACKAGES
 # ------------------------------
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(Biostrings)
-  library(GenomicFeatures)
-  library(ORFik)
-  library(rtracklayer)
+suppressWarnings({
+  suppressPackageStartupMessages({
+    library(tidyverse)
+    library(Biostrings)
+    library(GenomicFeatures)
+    library(ORFik)
+    library(rtracklayer)
+  })
 })
 
 
@@ -15,18 +17,17 @@ suppressPackageStartupMessages({
 #
 sm_params <- snakemake@params[[1]]
 window_size <- sm_params$window_size
-export_bam <- sm_params$export_bam
+export_ofst <- sm_params$export_ofst
 export_bigwig <- sm_params$export_bigwig
 max_cores <- snakemake@threads
-seq_type <- "rpf"
 input_file <- snakemake@input$bam
 input_shift <- sm_params$shift_table
-output_ofst_orig <- snakemake@output$ofst_orig
-output_ofst_filt <- snakemake@output$ofst_filt
-output_bam_filt <- str_replace(output_ofst_filt, ".ofst$", ".bam")
-output_bigwig_filt <- str_remove(output_ofst_filt, ".ofst$")
+output_bam_filt <- snakemake@output$bam
+output_ofst_filt <- str_replace(output_bam_filt, ".bam$", ".ofst")
+output_bigwig_filt <- str_remove(output_bam_filt, ".bam$")
+output_png_preshift <- snakemake@output$png_preshift
+output_png_postshift <- snakemake@output$png_postshift
 output_shift <- snakemake@output$shift
-# read_length <- sm_params[[paste0(seq_type, "_read_length")]]
 read_length <- sm_params$read_length
 end_alignment <- sm_params$end_alignment
 skip_shifting <- sm_params$skip_shifting
@@ -35,10 +36,9 @@ skip_length_filter <- sm_params$skip_length_filter
 
 # STAGE 1 : IMPORT SEQ DATA
 # ------------------------------
-# import RPF, QTI, or RNASEQ *.bam files
+# import *.bam files
 messages <- c()
 messages <- append(messages, paste0("importing sequencing data: ", input_file))
-messages <- append(messages, paste0("sequencing data type: ", seq_type))
 
 # import orf annotation
 messages <- append(messages, "import ORF annotation in GRanges format")
@@ -49,12 +49,15 @@ messages <- append(messages, "read unshifted BAM files")
 bam <- ORFik::readBam(input_file)
 
 # filter bam file by read lengths
-messages <- append(
-  messages,
-  paste0("filtering reads by length (", read_length[1], " to ", read_length[2], " nt)")
-)
-
-bam_filtered <- bam[readWidths(bam) %in% seq(read_length[1], read_length[2])]
+if (!skip_length_filter) {
+  messages <- append(
+    messages,
+    paste0("filtering reads by length (", read_length[1], " to ", read_length[2], " nt)")
+  )
+  bam_filtered <- bam[readWidths(bam) %in% seq(read_length[1], read_length[2])]
+} else {
+  bam_filtered <- bam
+}
 
 # collapse reads to single base position
 bam_onebase <- convertToOneBasedRanges(bam_filtered, method = end_alignment, addSizeColumn = TRUE)
@@ -93,7 +96,7 @@ shiftFootprints_3prime <- function(footprints, shifts, sort = TRUE) {
   shifted <- shift(footprints, shifts_all)
   shifted <- sortSeqlevels(shifted)
   if (sort) {
-    message("Sorting shifted footprints...")
+    messages <- append(messages, "Sorting shifted footprints...")
     shifted <- sort(shifted)
   }
   return(shifted)
@@ -170,67 +173,103 @@ get_offset <- function(footprints, cds, transcript, window_size) {
   df_result
 }
 
-# shift bam files (only RPF data)
-if (seq_type %in% c("rpf", "qti")) {
-  if (skip_shifting) {
-    messages <- append(messages, "shifting skipped, reads are only end-aligned")
-    bam_filtered_shifted <- bam_onebase
-  } else {
-    # read optional shift table
-    if (!is.null(input_shift)) {
-      messages <- append(messages, paste0("importing shift table: ", input_shift))
-      df_shift <- read_csv(input_shift, show_col_types = FALSE)
-    } else {
-      messages <- append(messages, "calculating shift table")
-      df_shift <- get_offset(bam_onebase, list_cds, list_tx, window_size)
-    }
-    if (end_alignment == "5prime") {
-      messages <- append(messages, "shifting footprints and reducing to 5' end")
-      bam_filtered_shifted <- shiftFootprints(bam_filtered, df_shift)
-    } else if (end_alignment == "3prime") {
-      messages <- append(messages, "shifting footprints and reducing to 3' end")
-      bam_filtered_shifted <- shiftFootprints_3prime(bam_onebase, df_shift)
-    }
+# function to calculate and plot heatmap of start site coverage
+plot_hitmap <- function(
+    footprints, cds, transcript, title = NULL,
+    window_size = 30, plot = TRUE) {
+  if (any(width(footprints[1:100]) > 1)) {
+    footprints <- convertToOneBasedRanges(
+      footprints,
+      method = end_alignment,
+      addSizeColumn = TRUE
+    )
   }
+  # check TSS window size and remove too short/long windows
+  windows = startRegion(cds, transcript, TRUE, window_size, window_size)
+  windowSize <- (2 * window_size) + 1
+  matching_window <- which(widthPerGroup(windows) == windowSize)
+
+  hitmap <- windowPerReadLength(
+    grl = cds[matching_window],
+    tx = transcript[matching_window],
+    reads = footprints,
+    pShifted = FALSE,
+    drop.zero.dt = TRUE,
+    upstream = window_size,
+    downstream = window_size
+  )
+  if (plot) {
+    coverageHeatMap(
+      hitmap,
+      title = title,
+      colors = c("white", "#B3B3B3", "#E6AB02", "#E7298A", "#7570B3"),
+      scoring = "zscore", addFracPlot = TRUE
+    )
+  } else {
+    hitmap
+  }
+}
+
+# shift bam files
+if (skip_shifting) {
+  messages <- append(messages, "shifting not performed, reads are only end-aligned")
+  bam_filtered_shifted <- bam_onebase
 } else {
-  messages <- append(
-    messages,
-    "RNA-Seq data file: reads were not shifted or end-aligned"
-  )
-  bam_filtered_shifted <- bam_filtered
-  df_shift <- data.frame(
-    fraction = 0,
-    offset = 0,
-    shift = 0,
-    shift_model = 0,
-    offsets_start = 0
-  )
+  # read optional shift table
+  if (!is.null(input_shift)) {
+    messages <- append(messages, paste0("importing shift table: ", input_shift))
+    df_shift <- read_csv(input_shift, show_col_types = FALSE)
+  } else {
+    messages <- append(messages, "calculating shift table")
+    df_shift <- get_offset(bam_onebase, list_cds, list_tx, window_size)
+  }
+  if (end_alignment == "5prime") {
+    messages <- append(messages, "shifting footprints and reducing to 5' end")
+    bam_filtered_shifted <- shiftFootprints(bam_filtered, df_shift)
+  } else if (end_alignment == "3prime") {
+    messages <- append(messages, "shifting footprints and reducing to 3' end")
+    bam_filtered_shifted <- shiftFootprints_3prime(bam_onebase, df_shift)
+  }
 }
 
 
 # STAGE 3 : EXPORT RESULTS
 # ------------------------
-# export original, end-aligned bam file in space-efficient osft format
 messages <- append(messages, "exporting all read output files")
-convertToOneBasedRanges(bam, method = end_alignment, addSizeColumn = TRUE) %>%
-  export.ofst(file = output_ofst_orig)
-
-# export shifted/filtered bam file in space-efficient osft format
-export.ofst(bam_filtered_shifted, file = output_ofst_filt)
 
 # export shifted/filtered bam file in conventional bam format (optional)
-if (export_bam) {
-  rtracklayer::export(object = bam_filtered_shifted, con = output_bam_filt, format = "bam")
+rtracklayer::export(object = bam_filtered_shifted, con = output_bam_filt, format = "bam")
+
+# export shifted/filtered bam file in space-efficient osft format
+if (export_ofst) {
+  export.ofst(bam_filtered_shifted, file = output_ofst_filt)
 }
 
 # export shifted/filtered bam file in bigwig track format (optional)
 if (export_bigwig) {
-  export.bigWig(bam_filtered_shifted, file = str_remove(output_bigwig_filt, "_forward.bw"))
+  export.bigWig(bam_filtered_shifted, file = output_bigwig_filt)
 }
 
 # export shift table
 messages <- append(messages, "exporting shift table")
 write_csv(df_shift, file = output_shift)
+
+# plot heatmap of start site coverage before and after shifting
+messages <- append(messages, "exporting heatmaps of start codon coverage before and after shifting")
+png(filename = output_png_preshift, width = 875, height = 563, res = 120)
+plot_hitmap(
+  bam_onebase,
+  list_cds, list_tx,
+  title = paste0("File: ", input_file, " -- before shifting")
+)
+invisible(capture.output(dev.off()))
+png(filename = output_png_postshift, width = 875, height = 563, res = 120)
+plot_hitmap(
+  bam_filtered_shifted,
+  list_cds, list_tx,
+  title = paste0("File: ", input_file, " -- after shifting")
+)
+invisible(capture.output(dev.off()))
 
 # export log
 messages <- append(messages, "export of shifted read files complete")

@@ -5,6 +5,13 @@ get_genome:
   assembly: "GCF_000006785.2"
   fasta: Null
   gff: Null
+  gff_source_type:
+    [
+      "RefSeq": "gene",
+      "RefSeq": "pseudogene",
+      "RefSeq": "CDS",
+      "Protein Homology": "CDS",
+    ]
 
 cutadapt:
   fivep_adapter: Null
@@ -44,31 +51,25 @@ extract_features:
 bedtools_intersect:
   defaults: ["-v ", "-s ", "-f 0.2"]
 
-deeptools:
-  libtype: "sense" # parameter not used yet. Only sense direction currently handled # TODO #
-  bin_size: 1
-  normalize: "CPM"
-
 annotate_orfs:
   window_size: 30
-  sorf_max_length: 300
-  sorf_min_length: 45
-  orf_start_codon_table: 11
-  orf_stop_codon: ["TAA", "TAG", "TGA"]
-  orf_longest_only: False
 
 shift_reads:
   window_size: 30
   read_length: [27, 45]
-  # rpf_read_length: [30, 45]
-  # qti_read_length: [27, 45]
-  rnaseq_read_length: [0, 1000]
   end_alignment: "3prime"
-  shift_table: "config/shift_table/shift_table.csv"
-  export_bam: False
+  shift_table: Null
   export_bigwig: True
+  export_ofst: False
   skip_shifting: False
   skip_length_filter: True
 
 multiqc:
   config: "config/multiqc_config.yml"
+
+report:
+  export_figures: True
+  export_dir: "figures/"
+  figure_width: 875
+  figure_height: 500
+  figure_resolution: 125
