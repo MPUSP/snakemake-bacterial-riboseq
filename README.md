@@ -117,8 +117,8 @@ Ribosome footprint sequencing data in `*.fastq.gz` format. The currently support
 
 | sample   | condition | replicate | lib_prep | data_folder | fq1                      |
 | -------- | --------- | --------- | -------- | ----------- | ------------------------ |
-| RPF-RTP1 | RPF-RTP   | 1         | mpusp    | data        | RPF-RTP1_R1_001.fastq.gz |
-| RPF-RTP2 | RPF-RTP   | 2         | mpusp    | data        | RPF-RTP2_R1_001.fastq.gz |
+| RPF-RTP1 | RPF-RTP   | 1         | McGlincy | data        | RPF-RTP1_R1_001.fastq.gz |
+| RPF-RTP2 | RPF-RTP   | 2         | McGlincy | data        | RPF-RTP2_R1_001.fastq.gz |
 
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
