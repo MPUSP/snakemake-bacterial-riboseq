@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-all-green)
 [![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
-[![GitHub actions status](https://github.com/MPUSP/snakemake-bacterial-riboseq/workflows/Tests/badge.svg?branch=main)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions?query=branch%3Amain+workflow%3ATests)
+[![Tests](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 
 ---
@@ -13,7 +13,6 @@ A Snakemake workflow for the analysis of bacterial riboseq data.
   - [Usage](#usage)
   - [Workflow overview](#workflow-overview)
   - [Installation](#installation)
-    - [Additional tools](#additional-tools)
   - [Running the workflow](#running-the-workflow)
     - [Input data](#input-data)
       - [Reference genome](#reference-genome)
@@ -89,9 +88,7 @@ mamba create -c conda-forge -c bioconda -n snakemake-bacterial-riboseq snakemake
 conda activate snakemake-bacterial-riboseq
 ```
 
-### Additional tools
-
-**Important note:**
+**Note:**
 
 All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--use-conda` parameter (recommended).
 
