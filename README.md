@@ -4,6 +4,7 @@
 [![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
 [![Tests](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1D355C.svg?labelColor=000000)](https://sylabs.io/docs/)
 [![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog)
 
 ---
@@ -142,6 +143,12 @@ To run the complete workflow with test files using **`conda`**, execute the foll
 
 ```bash
 snakemake --cores 10 --use-conda --directory .test
+```
+
+To run the workflow with **singularity**, use:
+
+```bash
+snakemake --cores 10 --use-singularity --use-conda --directory .test
 ```
 
 ### Parameters

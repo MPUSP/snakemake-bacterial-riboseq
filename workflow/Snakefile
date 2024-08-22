@@ -40,6 +40,10 @@ Copyright Holder All Rights Reserved.{end}
 configfile: "config/config.yml"
 
 
+# container definition (optional)
+container: "oras://ghcr.io/MPUSP/snakemake-bacterial-riboseq:1.1.0"
+
+
 # load rules
 # -----------------------------------------------------
 include: "rules/common.smk"
