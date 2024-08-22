@@ -1,28 +1,5 @@
 # snakemake-bacterial-riboseq
 
-![Platform](https://img.shields.io/badge/platform-all-green)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
-[![Tests](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml)
-[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
-[![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog)
-
----
-
-A Snakemake workflow for the analysis of bacterial riboseq data.
-
-- [snakemake-bacterial-riboseq](#snakemake-bacterial-riboseq)
-  - [Usage](#usage)
-  - [Workflow overview](#workflow-overview)
-  - [Installation](#installation)
-  - [Running the workflow](#running-the-workflow)
-    - [Input data](#input-data)
-      - [Reference genome](#reference-genome)
-      - [Read data](#read-data)
-    - [Execution](#execution)
-    - [Parameters](#parameters)
-  - [Authors](#authors)
-  - [References](#references)
-
 ## Usage
 
 The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=MPUSP%2Fsnakemake-bacterial-riboseq).
@@ -30,11 +7,6 @@ The usage of this workflow is described in the [Snakemake Workflow Catalog](http
 If you use this workflow in a paper, don't forget to give credits to the authors by citing the URL of this (original) repository and its DOI (see above).
 
 ## Workflow overview
-
-<!-- include logo-->
-<img src="resources/images/logo.png" align="center" />
-
-----------
 
 This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
 The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
@@ -198,22 +170,3 @@ This table lists all parameters that can be used to run the workflow.
 | figure_width           | num  | standard figure width in px                 | 875                                          |
 | figure_height          | num  | standard figure height in px                | 500                                          |
 | figure_resolution      | num  | standard figure resolution in dpi           | 125                                          |
-
-## Authors
-
-- Dr. Rina Ahmed-Begrich
-  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
-  - ORCID profile: https://orcid.org/0000-0002-0656-1795
-- Dr. Michael Jahn
-  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
-  - ORCID profile: https://orcid.org/0000-0002-3913-153X
-  - github page: https://github.com/m-jahn
-
-
-Visit the MPUSP github page at https://github.com/MPUSP for more info on this workflow and other projects.
-
-## References
-
-- Essential tools are linked in the top section of this document
-- The sequencing library preparation is based on the publication:
-> McGlincy, N. J., & Ingolia, N. T. _Transcriptome-wide measurement of translation by ribosome profiling_. Methods, 126, 112–129, **2017**. https://doi.org/10.1016/J.YMETH.2017.05.028.
