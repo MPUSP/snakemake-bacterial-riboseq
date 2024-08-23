@@ -4,16 +4,20 @@ from snakemake.utils import validate
 from os import path
 
 
+# read sample sheet
 samples = (
     pd.read_csv(config["samplesheet"], sep="\t", dtype={"sample": str})
     .set_index("sample", drop=False)
     .sort_index()
 )
 
-# TODO: write validation schema
-# validate(SAMPLES, schema="../config/schemas/samples.schema.yml")
+
+# validate sample sheet and config file
+validate(samples, schema="../../config/schemas/samples.schema.yml")
+validate(config, schema="../../config/schemas/config.schema.yml")
 
 
+# define final targets of the workflow
 def get_final_output():
     targets = []
     targets.append("results/multiqc/multiqc_report.html")
