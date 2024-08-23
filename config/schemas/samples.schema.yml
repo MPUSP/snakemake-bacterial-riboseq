@@ -11,10 +11,6 @@ properties:
     type: number
     default: 1
     description: consecutive numbers representing multiple replicates of one condition
-  lib_prep:
-    type: string
-    default: "None"
-    description: type of library preparation; optional
   data_folder:
     type: string
     description: path to fastq files

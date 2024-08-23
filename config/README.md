@@ -85,15 +85,17 @@ Important requirements when using custom `*.fasta` and `*.gff` files:
 
 Ribosome footprint sequencing data in `*.fastq.gz` format. The currently supported input data are **single-end, strand-specific reads**. Input data files are supplied via a mandatory table, whose location is indicated in the `config.yml` file (default: `samples.tsv`). The sample sheet has the following layout:
 
-| sample   | condition | replicate | lib_prep | data_folder | fq1                      |
-| -------- | --------- | --------- | -------- | ----------- | ------------------------ |
-| RPF-RTP1 | RPF-RTP   | 1         | McGlincy | data        | RPF-RTP1_R1_001.fastq.gz |
-| RPF-RTP2 | RPF-RTP   | 2         | McGlincy | data        | RPF-RTP2_R1_001.fastq.gz |
+| sample   | condition | replicate | data_folder | fq1                      |
+| -------- | --------- | --------- | ----------- | ------------------------ |
+| RPF-RTP1 | RPF-RTP   | 1         | data        | RPF-RTP1_R1_001.fastq.gz |
+| RPF-RTP2 | RPF-RTP   | 2         | data        | RPF-RTP2_R1_001.fastq.gz |
 
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
 - Minimum and maximum read length after adapter removal (see option `cutadapt: default`). Here, the test data has a minimum read length of 15 + 7 = 22 (2 nt on 5'end + 5 nt on 3'end), and a maximum of 45 + 7 = 52.
 - Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy & Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
+
+Example configuration files for different sequencing protocols can be found in `resources/protocols/`.
 
 ### Execution
 
