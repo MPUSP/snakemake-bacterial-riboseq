@@ -1,7 +1,6 @@
 name: r_orfik
 channels:
   - conda-forge
-  - defaults
   - bioconda
 dependencies:
   - r-base=4.3.1

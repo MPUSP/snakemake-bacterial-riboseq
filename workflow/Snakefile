@@ -41,7 +41,7 @@ configfile: "config/config.yml"
 
 
 # container definition (optional)
-container: "oras://ghcr.io/MPUSP/snakemake-bacterial-riboseq:1.1.0"
+container: "oras://ghcr.io/MPUSP/snakemake-bacterial-riboseq:1.2.0"
 
 
 # load rules
@@ -58,7 +58,7 @@ onstart:
     print(f"Current working directory: {os.getcwd()}")
     print(f"Output directory: {os.path.join(os.getcwd(), 'results')}")
     print()
-    print(f"Riboseq samples: {list(samples.index)}")
+    print(f"RNAseq samples: {list(samples.index)}")
     print()
 
 
