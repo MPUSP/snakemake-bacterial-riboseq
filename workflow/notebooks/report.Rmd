@@ -174,11 +174,11 @@ head(df_features)
 ## Results from MultiQC
 
 - input for the first part are raw, short-read sequencing files in `*.fastq.gz` format
-- the input files are processed as outlined above in the module overview
+- the input files are processed as outlined in the overview above
 - this includes predominantly read alignment using `STAR`, optional UMI deduplication, and statistical analysis
 - output are mapped and filtered reads in `*.bam` file format
-- for diagnostics, the pipeline runs `MultiQC` at the end of the preprocessing module
-- a detailed report of read quality and mapping stats can be found at `./results/multiqc/multiqc_report.html`
+- for read and mapping diagnostics, the pipeline runs `MultiQC` at the end
+- the detailed `MultiQC` report is stored at `./results/multiqc/multiqc_report.html`
 
 # Postprocessing
 
@@ -186,10 +186,10 @@ head(df_features)
 
 ### Read number of input samples
 
-- input for module 2 are the processed `*.bam` files from RNA-Seq, RPF, and/or QTI experiments from module 1
-- the figure shows the read number per input file color coded by type of input
-- it also shows the comparison of read number before and after filtering and shifting
-- the default behavior is to filter reads by length, as shorter reads are less reliable
+- this figure shows read number per input file, color coded by type of input
+- data for this figure are processed `*.bam` files
+- color shows the comparison of read number before and after filtering by read length
+- the default behavior is to filter out reads that are too short to be reliable footprints (config option `shift_reads: read_length`)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_read_number <- c(bam, bam_shift) %>%
