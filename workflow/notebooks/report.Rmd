@@ -134,7 +134,7 @@ Imported results:
 - read files in `*.bam` format before shifting
 - read files in `*.bam` format after shifting
 - list of annotated ORFs, start regions, etc. in `granges` format
-- genome sequence on `*.fasta` format
+- genome sequence in `*.fasta` format
 
 ```{r, echo = FALSE}
 # tables
@@ -229,7 +229,7 @@ print(plot_read_number)
 - mapped read lengths from ribosome profiling data are usually variable
 - often one can see a bimodal distribution, with the larger reads being more reliable (representing genuine footprints)
 - shorter read fractions (e.g. shorter than a regular footprint) are ususally discarded
-- the default behavior of the workflow is to discard RPF reads below 30 nt
+- the default behavior of the workflow is to discard reads below 30 nt
 - the exact length threshold for reads should be determined by the user after visual inspection
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
@@ -314,8 +314,6 @@ knitr::include_graphics(plot_hitmaps_postshift, error = FALSE, rel_path = FALSE)
 - intergenic regions should not show this pattern
 - coverage on frame zero should be higher than frame one and two (see right hand summary)
 - if not, consider supplying manual shift table (see previous section [Read shifting](#read-shifting))
-- 3-nt periodicity is also used as a feature in ORF prediction (`ORFscore`)
-- this feature is only calculated from RPF data, and no figure is produced if RPF data is missing
 
 ```{r, echo = FALSE, warning = FALSE}
 start_window <- list_start %>%
@@ -473,7 +471,7 @@ print(plot_stop_cov)
 ### Genome overview
 
 - summary of basic statistics about the target genome
-- figure shows genome organisation in terms of chromosomes,
+- this figure shows genome organisation in terms of chromosomes,
   percent coding DNA, and GC content
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
@@ -620,7 +618,7 @@ plot_data_features <- df_feat_long %>%
   geom_step() +
   labs(
     title = "Distribution of log10 transformed features",
-    subtitle = "x-axis is rescaled for comparibility",
+    subtitle = "x-axis is rescaled for compatibility",
     x = "log10 normalized score", y = "frequency"
   ) +
   custom_theme(aspect.ratio = 1, legend.position = "bottom") +
@@ -645,7 +643,7 @@ print(plot_data_features)
 
 #### Correlation of read counts between samples {-}
 
-- figure shows the correlation between samples/replicates for selected scores
+- this figure shows the correlation between samples/replicates for selected scores
 - by default, the selected score is FPKM, different options might be implemented in a future release
 - between-replicate correlation should be higher than between-condition correlation
 
@@ -674,9 +672,9 @@ print(plot_sample_corr)
 
 #### Principal component analysis {-}
 
-- figures shows the correlation between samples/replicates for selected scores
+- this figure shows the correlation between samples/replicates for selected scores
 - by default, the selected score is FPKM, different options might be implemented in the next release
-- between-replicate correlation should be higher than between-condition replicationlir
+- between-replicate correlation should be higher than between-condition correlation
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
 df_pca <- df_fpkm %>%
