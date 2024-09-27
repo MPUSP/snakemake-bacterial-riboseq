@@ -1,7 +1,6 @@
 name: plot_mapping_length
 channels:
   - conda-forge
-  - defaults
   - bioconda
 dependencies:
   - pysam=0.22.1

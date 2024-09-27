@@ -14,3 +14,6 @@ Notes.md
 .vscode/*
 .snakemake-workflow-catalog.yml
 .test/results/*
+Dockerfile
+singularity.def
+snakemake-bacterial-riboseq.sif

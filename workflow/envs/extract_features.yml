@@ -1,7 +1,6 @@
 name: extract_features
 channels:
   - conda-forge
-  - defaults
   - bioconda
 dependencies:
   - bcbio-gff=0.7.1

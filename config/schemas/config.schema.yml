@@ -1,0 +1,131 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+description: an entry in the sample sheet
+properties:
+  samplesheet:
+    type: string
+    description: sample name/identifier
+
+  get_genome:
+    properties:
+      database:
+        type: ["string", "null"]
+      assembly:
+        type: ["string", "null"]
+      fasta:
+        type: ["string", "null"]
+      gff:
+        type: ["string", "null"]
+      gff_source_type:
+        type: array
+
+  cutadapt:
+    properties:
+      fivep_adapter:
+        type: ["string", "null"]
+      threep_adapter:
+        type: ["string", "null"]
+      default:
+        type: array
+
+  umi_extraction:
+    properties:
+      method:
+        type: string
+        enum: ["regex", "string"]
+      pattern:
+        type: string
+
+  umi_dedup:
+    type: array
+
+  star:
+    properties:
+      index:
+        type: ["string", "null"]
+      genomeSAindexNbases:
+        type: number
+      multi:
+        type: number
+      sam_multi:
+        type: number
+      intron_max:
+        type: number
+      default:
+        type: array
+
+  extract_features:
+    properties:
+      biotypes:
+        type: array
+      CDS:
+        type: array
+
+  bedtools_intersect:
+    properties:
+      defaults:
+        type: array
+
+  annotate_orfs:
+    properties:
+      window_size:
+        type: number
+
+  shift_reads:
+    properties:
+      window_size:
+        type: number
+      read_length:
+        type: array
+        maxItems: 2
+        minItems: 2
+        items:
+          type: number
+          minimum: 10
+          maximum: 100
+      end_alignment:
+        type: string
+        enum: ["3prime", "5prime"]
+      shift_table:
+        type: ["string", "null"]
+      export_bigwig:
+        type: boolean
+      export_ofst:
+        type: boolean
+      skip_shifting:
+        type: boolean
+      skip_length_filter:
+        type: boolean
+
+  multiqc:
+    properties:
+      config:
+        type: string
+
+  report:
+    properties:
+      export_figures:
+        type: boolean
+      export_dir:
+        type: string
+      figure_width:
+        type: number
+      figure_height:
+        type: number
+      figure_resolution:
+        type: number
+
+required:
+  [
+    "samplesheet",
+    "get_genome",
+    "cutadapt",
+    "umi_extraction",
+    "umi_dedup",
+    "star",
+    "extract_features",
+    "bedtools_intersect",
+    "annotate_orfs",
+    "shift_reads",
+    "multiqc",
+    "report",
+  ]

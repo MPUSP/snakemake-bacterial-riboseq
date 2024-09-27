@@ -1,0 +1,75 @@
+samplesheet: "config/samples.tsv"
+
+get_genome:
+  database: "ncbi"
+  assembly: "GCF_000006785.2"
+  fasta: Null
+  gff: Null
+  gff_source_type:
+    [
+      "RefSeq": "gene",
+      "RefSeq": "pseudogene",
+      "RefSeq": "CDS",
+      "Protein Homology": "CDS",
+    ]
+
+cutadapt:
+  fivep_adapter: Null
+  threep_adapter: "ATCGTAGATCGGAAGAGCACACGTCTGAA"
+  default: ["-q 10 ", "-m 22 ", "-M 52", "--overlap=3"]
+
+umi_extraction:
+  method: "regex"
+  pattern: "^(?P<umi_0>.{2}).*(?P<umi_1>.{5})$"
+umi_dedup: ["--edit-distance-threshold=0", "--read-length"]
+
+star:
+  index: Null
+  genomeSAindexNbases: 9
+  multi: 10
+  sam_multi: 1
+  intron_max: 1
+  default:
+    [
+      "--readFilesCommand zcat ",
+      "--outSAMstrandField None ",
+      "--outSAMattributes All ",
+      "--outSAMattrIHstart 0 ",
+      "--outFilterType Normal ",
+      "--outFilterMultimapScoreRange 1 ",
+      "-o STARmappings ",
+      "--outSAMtype BAM Unsorted ",
+      "--outStd BAM_Unsorted ",
+      "--outMultimapperOrder Random ",
+      "--alignEndsType EndToEnd",
+    ]
+
+extract_features:
+  biotypes: ["rRNA", "tRNA"]
+  CDS: ["protein_coding"]
+
+bedtools_intersect:
+  defaults: ["-v ", "-s ", "-f 0.2"]
+
+annotate_orfs:
+  window_size: 30
+
+shift_reads:
+  window_size: 30
+  read_length: [27, 45]
+  end_alignment: "3prime"
+  shift_table: Null
+  export_bigwig: True
+  export_ofst: False
+  skip_shifting: False
+  skip_length_filter: True
+
+multiqc:
+  config: "config/multiqc_config.yml"
+
+report:
+  export_figures: True
+  export_dir: "figures/"
+  figure_width: 875
+  figure_height: 500
+  figure_resolution: 125
