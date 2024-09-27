@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.0.0...v1.1.0) (2024-09-27)
+
+
+### Features
+
+* added complete list of parameters + readme for wf-catalog; closes [#5](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/5) ([d9b10b8](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/d9b10b8a4217b2f61dad45a1ad6dbfab5ab767e0))
+* added schemas for sample sheet and config files ([5b69264](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/5b6926464d15664346ff7b3664c47b3d2a2a46d9))
+* added wf catalog config file ([9441f4c](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/9441f4cfc78068288ec1e52f70812ccf0195eba6))
+* link to default riboseq protocol(s) ([6191dce](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/6191dce8a25b2550cacb8b619c07e3c4aca89356))
+
+
+### Bug Fixes
+
+* corrected path for GH actions status badge ([9375350](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/93753507871303617227c37bf8b1745c3467d524))
+* removed defaults channel from conda envs; closes [#10](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/10) ([2d07dd8](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/2d07dd88e8bcd3b8c2af8e9128452156451d5ef5))
+* removed notes about modules; closes [#12](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/12) ([eded36d](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/eded36dcb7756f2386996eedc1740ca0faebd06f))
+* typos in report ([b5b609f](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/b5b609fd8d67bd46ff58617ea4a76993c0838ccc))
+
 ## 1.0.0 (2024-08-02)
 
 
