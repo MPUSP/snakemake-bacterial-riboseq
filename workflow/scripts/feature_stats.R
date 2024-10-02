@@ -20,6 +20,7 @@ suppressWarnings({
 
 # import genome sequence
 messages <- c("importing genome sequence and annotation")
+samplesheet <- snakemake@input[["samples"]]
 genome_fasta <- snakemake@input[["fasta"]]
 genome_gff_rna <- snakemake@input[["gff_rna"]]
 genome_gff_cds <- snakemake@input[["gff_cds"]]
@@ -104,6 +105,18 @@ df_stats <- compute_features(
   Gtf = txdb
 ) %>%
   as_tibble()
+
+# add sample and replicate information to feature table
+df_stats <- mutate(df_stats, sample_name = str_remove(sample_name, "\\.bam$"))
+df_samples <- read_tsv(samplesheet, show_col_types = FALSE) %>%
+  dplyr::rename(sample_name = sample) %>%
+  dplyr::select(sample_name, condition, replicate)
+df_stats <- left_join(
+  df_stats, df_samples,
+  by = "sample_name"
+)
+df_stats <- df_stats %>%
+  relocate(seqnames, group_name, sample_name, condition, replicate)
 
 
 # EXPORT RESULTS

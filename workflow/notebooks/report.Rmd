@@ -140,7 +140,6 @@ Imported results:
 # tables
 df_annotated <- read_csv(snakemake@input$orfs_annotated, show_col_types = FALSE)
 df_features <- read_csv(snakemake@input$orfs_features, show_col_types = FALSE)
-df_features <- mutate(df_features, sample_name = str_remove(sample_name, "\\.bam$"))
 
 # import original and processed read data
 bam <- lapply(snakemake@input[["bam_filtered"]], ORFik::readBam)
@@ -152,6 +151,11 @@ names(bam_shift) <- str_split_i(snakemake@input[["bam_shifted"]], "\\/", -1) %>%
   str_remove("\\.bam$")
 
 sample_names <- names(bam)
+
+# condition table
+df_conditions <- df_features %>%
+  dplyr::select(sample_name, condition, replicate) %>%
+  distinct()
 
 # GRanges
 load(snakemake@input$granges)
@@ -192,21 +196,32 @@ head(df_features)
 - the default behavior is to filter out reads that are too short to be reliable footprints (config option `shift_reads: read_length`)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
-plot_read_number <- c(bam, bam_shift) %>%
+df_read_number <- c(bam, bam_shift) %>%
   lapply(length) %>%
   unlist() %>%
-  enframe() %>%
+  enframe(name = "sample_name", value = "count") %>%
   mutate(status = rep(c("original", "filtered"), each = length(sample_names))) %>%
-  ggplot(aes(y = fct_rev(name), x = value, fill = status)) +
-  geom_col(position = "dodge") +
+  left_join(df_conditions, by = "sample_name") %>%
+  mutate(replicate = fct_inseq(factor(replicate)))
+
+plot_read_number <- df_read_number %>%
+  ggplot(aes(y = fct_rev(condition), x = count, fill = replicate)) +
+  geom_col(data = . %>% filter(status == "original"), position = position_dodge(width = 0.9), alpha = 0.4) +
+  geom_col(data = . %>% filter(status == "filtered"), position = position_dodge(width = 0.9), alpha = 1.0) +
   geom_text(
+    data = . %>% filter(status == "original"),
     position = position_dodge(0.9), hjust = 0, size = 3,
-    aes(x = value + max(value / 100), label = paste0(round(value / 10^6, 1), "M"), color = status)
+    aes(x = count + max(count / 100), label = paste0(round(count / 10^6, 1), "M"), color = replicate)
+  ) +
+  geom_text(
+    data = . %>% filter(status == "filtered"),
+    position = position_dodge(0.9), hjust = 0, size = 3,
+    aes(x = count + max(count / 100), label = paste0(round(count / 10^6, 1), "M"), color = replicate)
   ) +
   labs(
     x = "n total reads", y = "",
     title = "Read number for all samples",
-    subtitle = "color: before and after filtering by size"
+    subtitle = "color: replicate, transparency: before and after filtering by size"
   ) +
   custom_theme(legend.position = "bottom") +
   scale_fill_manual(values = custom_colors) +
@@ -225,7 +240,7 @@ print(plot_read_number)
 
 ### Read length distribution
 
-- this figure shows read length distribution for all samples and data types
+- this figure shows read length distribution for all samples
 - mapped read lengths from ribosome profiling data are usually variable
 - often one can see a bimodal distribution, with the larger reads being more reliable (representing genuine footprints)
 - shorter read fractions (e.g. shorter than a regular footprint) are ususally discarded
@@ -239,22 +254,27 @@ df_read_lengths <- lapply(bam, function(file) {
     enframe(name = "read_length", value = "read_count") %>%
     mutate(read_count = as.numeric(read_count))
 }) %>%
-  bind_rows(.id = "name")
+  bind_rows(.id = "sample_name") %>%
+  left_join(df_conditions, by = "sample_name") %>%
+  mutate(replicate = fct_inseq(factor(replicate)))
 
 plot_read_length <- df_read_lengths %>%
-  group_by(name) %>%
+  group_by(condition, replicate) %>%
   mutate(read_count = read_count / sum(read_count) * 100) %>%
   ggplot(aes(
     x = as.numeric(read_length),
-    y = read_count
+    y = read_count,
+    color = condition,
+    linetype = replicate
   )) +
   geom_step() +
   labs(
     x = "read length", y = "frequency (% total reads)",
-    title = "Read lengths distribution, per sample"
+    title = "Read lengths distribution, per condition",
+    subtitle = "color: condition, line type: replicate"
   ) +
   custom_theme() +
-  facet_wrap(~name) +
+  facet_wrap(~condition) +
   scale_color_manual(values = custom_colors)
 
 if (export_figures) {
@@ -599,26 +619,27 @@ print(plot_orfs_anno)
 ```{r, echo = FALSE, warning = FALSE}
 df_feat_long <- df_features %>%
   dplyr::select(
-    group_name, sample_name, countRFP, cpmRFP, fpkmRFP, floss,
+    group_name, condition, replicate, countRFP, cpmRFP, fpkmRFP, floss,
     entropyRFP, disengagementScores, RRS, RSS, ORFScores, ioScore,
     startCodonCoverage, startRegionCoverage, startRegionRelative
   ) %>%
-  mutate(across(!c("group_name", "sample_name"), ~ log10(abs(.x)))) %>%
-  pivot_longer(cols = !c("group_name", "sample_name"), names_to = "feature", values_to = "value")
+  mutate(across(!c("group_name", "condition", "replicate"), ~ log10(abs(.x)))) %>%
+  pivot_longer(cols = !c("group_name", "condition", "replicate"), names_to = "feature", values_to = "value")
 ```
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
 plot_data_features <- df_feat_long %>%
   filter(!is.infinite(value), !is.na(value)) %>%
-  group_by(sample_name, feature) %>%
+  group_by(condition, feature, group_name) %>%
+  summarize(value = mean(value, na.rm = TRUE)) %>%
   mutate(bins = cut_interval(value, n = 40, labels = FALSE)) %>%
   group_by(bins, .add = TRUE) %>%
   summarize(freq = n(), .groups = "drop") %>%
-  ggplot(aes(x = bins, y = freq, color = sample_name)) +
+  ggplot(aes(x = bins, y = freq, color = condition)) +
   geom_step() +
   labs(
     title = "Distribution of log10 transformed features",
-    subtitle = "x-axis is rescaled for compatibility",
+    subtitle = "mean of replicates; x-axis is rescaled for compatibility",
     x = "log10 normalized score", y = "frequency"
   ) +
   custom_theme(aspect.ratio = 1, legend.position = "bottom") +
@@ -655,8 +676,10 @@ df_fpkm <- df_features %>%
   pivot_wider(id_cols = group_name, names_from = sample_name, values_from = fpkmRFP) %>%
   dplyr::select(-group_name)
 
-plot_sample_corr <- ggpairs(df_fpkm) +
+plot_sample_corr <- ggpairs(df_fpkm, aes(color = "")) +
   labs(title = "Correlation of log10 transformed FPKM") +
+  scale_color_manual(values = alpha(custom_colors, 0.7)) +
+  scale_fill_manual(values = alpha(custom_colors, 0.5)) +
   custom_theme()
 
 if (export_figures) {
@@ -668,6 +691,55 @@ if (export_figures) {
 }
 
 print(plot_sample_corr)
+```
+
+#### Variation of read counts between replicates {-}
+
+- this figure shows a histogram of the coeffcient of variation (CV, or relative standard deviation)
+- the CV was calculated based on all replicates of a sample
+- a distribution where the majority of genes have a CV below 25% can be considered good
+- if no replicates were used, this step is omitted
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figwidth}
+plot_cv <- df_features %>%
+  dplyr::select(group_name, condition, replicate, fpkmRFP) %>%
+  filter(fpkmRFP != 0) %>%
+  group_by(group_name, condition) %>%
+  summarize(
+    mean_fpkm = mean(fpkmRFP, na.rm = TRUE),
+    sd_fpkm = sd(fpkmRFP),
+    cv_fpkm = sd_fpkm / mean_fpkm
+  ) %>%
+  ungroup() %>%
+  mutate(
+    bins = cut_width(cv_fpkm, width = 0.05),
+    bins = as.numeric(str_extract(bins, "[0-9]*\\.[0-9]*"))
+  ) %>%
+  group_by(condition, bins, .add = TRUE) %>%
+  summarize(freq = n(), .groups = "drop") %>%
+  ggplot(aes(x = bins, y = freq, color = condition)) +
+  geom_step(show.legend = FALSE) +
+  labs(
+    title = "Distribution of coefficient of variation (CV)",
+    x = "CV", y = "frequency"
+  ) +
+  custom_theme(aspect.ratio = 1, legend.position = "bottom") +
+  facet_wrap(~condition) +
+  theme(axis.text.x = element_blank()) +
+  scale_color_manual(values = rep_len(
+    custom_colors,
+    length.out = length(unique(df_features$condition))
+  ))
+
+if (export_figures) {
+  save_plot(
+    plot_sample_corr,
+    path = export_plots,
+    width = figwidth, height = figwidth
+  )
+}
+
+print(plot_cv)
 ```
 
 #### Principal component analysis {-}
@@ -691,16 +763,22 @@ if (!"PC3" %in% colnames(df_pca)) {
   df_pca$PC3 <- 1
 }
 
+df_pca <- left_join(
+  df_pca,
+  df_conditions,
+  by = "sample_name"
+)
+
 plot_pca <- df_pca %>%
   ggplot(aes(
-    x = PC1, y = PC2, size = PC3, color = sample_name,
-    label = sample_name
+    x = PC1, y = PC2, size = PC3, color = condition,
+    label = replicate
   )) +
   geom_point() +
-  geom_text_repel(size = 3, point.padding = 10) +
+  geom_text_repel(size = 3, point.padding = 10, show.legend = FALSE) +
   labs(
     title = "PCA of log10 transformed FPKM values",
-    subtitle = "point size encodes PC3, color encodes sample"
+    subtitle = "point size encodes PC3, color encodes condition, point label is replicate"
   ) +
   custom_theme(aspect.ratio = 1, legend.position = "bottom") +
   scale_color_manual(values = rep_len(
@@ -742,7 +820,7 @@ For all other feedback, contact the author(s).
   - ORCID profile: https://orcid.org/0000-0002-0656-1795
   - github page: https://github.com/rabioinf
 
-Visit the MPUSP github page at https://github.com/MPUSP for more info on this workflow and other projects.
+Visit the MPUSP github page at https://github.com/MPUSP for more info about this workflow and other projects.
 
 ## Data accessability
 
