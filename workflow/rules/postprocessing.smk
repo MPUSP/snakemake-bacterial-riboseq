@@ -74,6 +74,7 @@ rule shift_reads:
 # -----------------------------------------------------
 rule feature_stats:
     input:
+        samples=config["samplesheet"],
         fasta=rules.get_genome.output.fasta,
         gff_rna=rules.extract_features.output.gff,
         gff_cds=rules.extract_mRNA_features.output.gff,
