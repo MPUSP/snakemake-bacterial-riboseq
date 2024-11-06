@@ -8,6 +8,10 @@ resources/**
 !.gitignore
 !.gitattributes
 !.editorconfig
+**.conda
+**.condarc
+**.cache
+**.java
 
 # Custom additions
 Notes.md

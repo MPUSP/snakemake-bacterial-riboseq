@@ -8,12 +8,13 @@
 #          may apply.                                   #
 # ----------------------------------------------------- #
 
+conda:
+    "envs/global.yml"
+
 import os
 import pandas as pd
 from datetime import date
 from snakemake.utils import min_version
-
-# min_version("7.0")
 
 __author__ = "Rina Ahmed-Begrich, Michael Jahn"
 __year__ = str(date.today()).split("-")[0]
