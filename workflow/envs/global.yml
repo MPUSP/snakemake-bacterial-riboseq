@@ -1,0 +1,6 @@
+name: global
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - pandas=2.2.2

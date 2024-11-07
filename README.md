@@ -1,7 +1,7 @@
 # snakemake-bacterial-riboseq
 
 ![Platform](https://img.shields.io/badge/platform-all-green)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg)](https://snakemake.github.io)
 [![Tests](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1D355C.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -33,26 +33,27 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 ## Workflow overview
 
 <!-- include logo-->
+
 <img src="resources/images/logo.png" align="center" />
 
-----------
+---
 
 This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
 The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
 
- 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
-    1. Using automatic download from NCBI with a `RefSeq` ID
-    2. Using user-supplied files
- 2. Check quality of input sequencing data (`FastQC`)
- 3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
- 4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
- 5. Map reads to the reference genome (`STAR aligner`)
- 6. Sort and index for aligned seq data (`samtools`)
- 7. Filter reads by feature type (`bedtools`)
- 8. Generate summary report for all processing steps (`MultiQC`)
- 9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
- 10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
- 11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
+1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+   1. Using automatic download from NCBI with a `RefSeq` ID
+   2. Using user-supplied files
+2. Check quality of input sequencing data (`FastQC`)
+3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
+4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
+5. Map reads to the reference genome (`STAR aligner`)
+6. Sort and index for aligned seq data (`samtools`)
+7. Filter reads by feature type (`bedtools`)
+8. Generate summary report for all processing steps (`MultiQC`)
+9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
+10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
+11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
 
 If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
 
@@ -67,18 +68,7 @@ cd snakemake-bacterial-riboseq
 
 **Step 2: Install dependencies**
 
-It is recommended to install snakemake and run the workflow with `conda`, `mamba` or `micromamba`.
-
-```bash
-# download Miniconda3 installer
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-# install Conda (respond by 'yes')
-bash miniconda.sh
-# update Conda
-conda update -y conda
-# install Mamba
-conda install -n base -c conda-forge -y mamba
-```
+It is recommended to install snakemake and run the workflow with `conda` or `mamba`. [Miniforge](https://conda-forge.org/download/) is the preferred conda-forge installer and includes `conda`, `mamba` and their dependencies.
 
 **Step 3: Create snakemake environment**
 
@@ -93,7 +83,6 @@ conda activate snakemake-bacterial-riboseq
 **Note:**
 
 All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--use-conda` parameter (recommended).
-
 
 ## Running the workflow
 
@@ -122,7 +111,7 @@ Ribosome footprint sequencing data in `*.fastq.gz` format. The currently support
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
 - Minimum and maximum read length after adapter removal (see option `cutadapt: default`). Here, the test data has a minimum read length of 15 + 7 = 22 (2 nt on 5'end + 5 nt on 3'end), and a maximum of 45 + 7 = 52.
-- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy & Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
+- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy &amp; Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
 
 Example configuration files for different sequencing protocols can be found in `resources/protocols/`.
 
@@ -144,13 +133,13 @@ snakemake --dry-run
 To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test
+snakemake --cores 10 --sdm conda --directory .test
 ```
 
-To run the workflow with **singularity**, use:
+To run the workflow with **singularity** / **apptainer**, use:
 
 ```bash
-snakemake --cores 10 --use-singularity --use-conda --directory .test
+snakemake --cores 10 --sdm conda apptainer --directory .test
 ```
 
 ### Parameters
@@ -218,11 +207,11 @@ This table lists all parameters that can be used to run the workflow.
   - ORCID profile: https://orcid.org/0000-0002-3913-153X
   - github page: https://github.com/m-jahn
 
-
 Visit the MPUSP github page at https://github.com/MPUSP for more info on this workflow and other projects.
 
 ## References
 
 - Essential tools are linked in the top section of this document
 - The sequencing library preparation is based on the publication:
+
 > McGlincy, N. J., & Ingolia, N. T. _Transcriptome-wide measurement of translation by ribosome profiling_. Methods, 126, 112–129, **2017**. https://doi.org/10.1016/J.YMETH.2017.05.028.
