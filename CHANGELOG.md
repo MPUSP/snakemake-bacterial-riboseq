@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.1.0...v1.2.0) (2024-11-07)
+
+
+### Features
+
+* added global env directive, closes [#11](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/11) ([f9dd861](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/f9dd8615763433bab6713abba1434883fa058a16))
+* handling of conditions and replicates in output and report; closes [#16](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/16) ([3b868c4](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/3b868c41095f8a51e7472835c941c0efd98a688e))
+
+
+### Bug Fixes
+
+* adjusted installation instructions for conda/mamba in readme, closes [#14](https://github.com/MPUSP/snakemake-bacterial-riboseq/issues/14) ([81285c9](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/81285c953ad00bfceb722cef225034a502230611))
+
 ## [1.1.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.0.0...v1.1.0) (2024-09-27)
 
 
