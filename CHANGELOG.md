@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.2.0...v1.3.0) (2025-01-22)
+
+
+### Features
+
+* updated github actions workflows ([9527b3a](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/9527b3abd4ffb00a85c28484fa9da89dc5dd25cd))
+
+
+### Bug Fixes
+
+* added fetch depth statement ([153f49a](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/153f49acbc7884e1ef3ca30e9cec4bc24e3057c9))
+* reformat conda inject statement ([cbf8db2](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/cbf8db2a3f6acc04240a6c12a2b6cb3cc2f3ae7a))
+
 ## [1.2.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.1.0...v1.2.0) (2024-11-07)
 
 
