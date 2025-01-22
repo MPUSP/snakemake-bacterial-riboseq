@@ -12,6 +12,8 @@ jobs:
     if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Formatting
         uses: super-linter/super-linter@v7
         env:
