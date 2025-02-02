@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.3.0...v1.4.0) (2025-02-02)
+
+
+### Features
+
+* updated github actions workflow. checking formatting of yaml files using prettier ([f3b63b7](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/f3b63b7b21e0792c7b1b7c9a3aeff77f4f047bc2))
+
+
+### Bug Fixes
+
+* changed license to MIT ([e9985f9](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/e9985f9b9809c1e1b3d2f146e067f2b807abb319))
+* corrected ending of yml file ([4cc8311](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/4cc8311d5c3c01257cd04dde4d562b230deae85f))
+
 ## [1.3.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.2.0...v1.3.0) (2025-01-22)
 
 
