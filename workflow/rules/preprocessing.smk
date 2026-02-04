@@ -69,23 +69,31 @@ rule umi_extraction:
 # module to fetch genome from NCBI or Ensemble
 # -----------------------------------------------------
 rule get_genome:
+    input:
+        fasta=lambda wildcards: (
+            config["get_genome"]["fasta"]
+            if config["get_genome"]["database"] == "manual"
+            else []
+        ),
+        gff=lambda wildcards: (
+            config["get_genome"]["gff"]
+            if config["get_genome"]["database"] == "manual"
+            else []
+        ),
     output:
-        path=directory("results/get_genome"),
         fasta="results/get_genome/genome.fasta",
         gff="results/get_genome/genome.gff",
-    conda:
-        "../envs/get_genome.yml"
-    message:
-        """--- Parsing genome GFF and FASTA files."""
+        fai="results/get_genome/genome.fasta.fai",
     params:
         database=config["get_genome"]["database"],
         assembly=config["get_genome"]["assembly"],
-        fasta=config["get_genome"]["fasta"],
-        gff=config["get_genome"]["gff"],
+        gff_source_types=config["get_genome"]["gff_source_type"],
+    message:
+        "--- Parsing genome GFF and FASTA files"
     log:
         path="results/get_genome/log/get_genome.log",
-    script:
-        "../scripts/get_genome.py"
+    wrapper:
+        "https://raw.githubusercontent.com/MPUSP/mpusp-snakemake-wrappers/refs/heads/main/get_genome"
 
 
 # module to map reads to ref genome using STAR aligner
@@ -269,7 +277,11 @@ rule extract_mapping_length:
 # -----------------------------------------------------
 rule multiqc:
     input:
-        expand("results/fastqc_cutadapt/{sample}_fastqc.html", sample=samples.index),
+        expand(
+            "results/fastqc_{status}/{sample}_fastqc.html",
+            sample=samples.index,
+            status=config["multiqc"]["fastqc_stage"],
+        ),
         expand("results/cutadapt/{sample}.fastq.gz", sample=samples.index),
         expand(
             "results/umi_extraction/{sample}.fastq.gz",

@@ -96,6 +96,9 @@ properties:
 
   multiqc:
     properties:
+      fastqc_stage:
+        type: string
+        enum: ["raw", "cutadapt"]
       config:
         type: string
 

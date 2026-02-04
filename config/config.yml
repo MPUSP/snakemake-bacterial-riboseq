@@ -64,6 +64,7 @@ shift_reads:
   skip_length_filter: True
 
 multiqc:
+  fastqc_stage: "raw"
   config: "config/multiqc_config.yml"
 
 report:
