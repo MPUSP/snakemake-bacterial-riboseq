@@ -16,7 +16,7 @@ rule fastqc:
         """--- Checking fastq files with FastQC."""
     log:
         "results/fastqc_{status}/log/{sample}.log",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "mkdir -p {output.report};"
         "fastqc --nogroup --extract --quiet --threads {threads} -o {output.report} {input} > {log}"
@@ -44,7 +44,7 @@ rule cutadapt:
     log:
         stdout="results/clipped/log/{sample}.log",
         stderr="results/clipped/log/{sample}.stderr",
-    threads: int(workflow.cores * 0.4)  # assign 40% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "if [ {params.fivep_adapter} != None ]; then "
         "fivep=`echo -g {params.fivep_adapter}`; "
@@ -155,7 +155,7 @@ rule star_mapping:
         outprefix=lambda w, output: f"{os.path.splitext(output.bam)[0]}_",
     log:
         path="results/mapped/log/{sample}.log",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "STAR "
         "--runThreadN {threads} "
@@ -185,7 +185,7 @@ rule mapping_sorted_bam:
         """--- Samtools sort and index bam files."""
     params:
         tmp="results/mapped/sort_{sample}_tmp",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "samtools sort -@ {threads} -O bam -T {params.tmp} -o {output.bam} {input} 2> {log}; "
         "samtools index -@ {threads} {output.bam} 2>> {log}"
@@ -207,7 +207,7 @@ rule umi_dedup:
     params:
         tmp="results/deduplicated/sort_{sample}_tmp",
         default=config["umi_dedup"],
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     log:
         path="results/deduplicated/log/{sample}.log",
         stderr="results/deduplicated/log/{sample}.stderr",
@@ -256,7 +256,7 @@ rule filter_bam:
         "../envs/filter_bam.yml"
     params:
         defaults=config["bedtools_intersect"]["defaults"],
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "intersectBed -abam {input.bam} -b {input.gff} {params.defaults} | "
         "samtools sort -@ {threads} > {output.bam} 2> {log.path}; "
