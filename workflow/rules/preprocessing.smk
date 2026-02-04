@@ -9,61 +9,44 @@ rule fastqc:
     input:
         get_fastq,
     output:
-        report=directory("results/fastqc_{status}/{sample}"),
-    conda:
-        "../envs/fastqc.yml"
+        html="results/fastqc_{status}/{sample}_fastqc.html",
+        zip="results/fastqc_{status}/{sample}_fastqc.zip",
     message:
         """--- Checking fastq files with FastQC."""
     log:
         "results/fastqc_{status}/log/{sample}.log",
     threads: max(1, int(workflow.cores * 0.25))
-    shell:
-        "mkdir -p {output.report};"
-        "fastqc --nogroup --extract --quiet --threads {threads} -o {output.report} {input} > {log}"
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v7.6.0/bio/fastqc"
 
 
 # module to trim adapters from reads
 # -----------------------------------------------------
 rule cutadapt:
     input:
-        fastq=lambda wc: expand(
-            "{input_dir}/{sample}",
-            input_dir=samples.loc[wc.sample]["data_folder"],
-            sample=samples.loc[wc.sample]["fq1"],
-        ),
+        get_fastq,
     output:
-        fastq="results/clipped/{sample}.fastq.gz",
-    conda:
-        "../envs/cutadapt.yml"
+        fastq="results/cutadapt/{sample}.fastq.gz",
+        qc="results/cutadapt/{sample}.qc.txt",
+    params:
+        adapters=config["cutadapt"]["adapters"],
+        extra=config["cutadapt"]["default"],
     message:
         """--- Trim adapters from reads."""
-    params:
-        fivep_adapter=config["cutadapt"]["fivep_adapter"],
-        threep_adapter=config["cutadapt"]["threep_adapter"],
-        default=config["cutadapt"]["default"],
-    log:
-        stdout="results/clipped/log/{sample}.log",
-        stderr="results/clipped/log/{sample}.stderr",
     threads: max(1, int(workflow.cores * 0.25))
-    shell:
-        "if [ {params.fivep_adapter} != None ]; then "
-        "fivep=`echo -g {params.fivep_adapter}`; "
-        "else fivep=''; "
-        "fi; "
-        "if [ {params.threep_adapter} != None ]; then "
-        "threep=`echo -a {params.threep_adapter}`; "
-        "else threep=''; "
-        "fi; "
-        "cutadapt ${{fivep}} ${{threep}} "
-        "{params.default} --cores {threads} "
-        "-o {output.fastq} {input.fastq} > {log.stdout} 2> {log.stderr}"
+    log:
+        "results/cutadapt/log/{sample}.log",
+    wrapper:
+        "v7.9.0/bio/cutadapt/se"
 
 
 # module to extract UMIs and attach to read name
 # -----------------------------------------------------
 rule umi_extraction:
     input:
-        fastq="results/clipped/{sample}.fastq.gz",
+        fastq="results/cutadapt/{sample}.fastq.gz",
     output:
         fastq="results/umi_extraction/{sample}.fastq.gz",
     conda:
@@ -286,8 +269,8 @@ rule extract_mapping_length:
 # -----------------------------------------------------
 rule multiqc:
     input:
-        expand("results/fastqc_clipped/{sample}_fastqc.html", sample=samples.index),
-        expand("results/clipped/{sample}.fastq.gz", sample=samples.index),
+        expand("results/fastqc_cutadapt/{sample}_fastqc.html", sample=samples.index),
+        expand("results/cutadapt/{sample}.fastq.gz", sample=samples.index),
         expand(
             "results/umi_extraction/{sample}.fastq.gz",
             sample=samples.index,

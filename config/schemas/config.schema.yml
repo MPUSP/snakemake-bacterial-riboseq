@@ -1,4 +1,4 @@
-$schema: "http://json-schema.org/draft-07/schema#"
+$schema: "https://json-schema.org/draft/2020-12/schema"
 description: an entry in the sample sheet
 properties:
   samplesheet:
@@ -20,10 +20,8 @@ properties:
 
   cutadapt:
     properties:
-      fivep_adapter:
-        type: ["string", "null"]
-      threep_adapter:
-        type: ["string", "null"]
+      adapters:
+        type: string
       default:
         type: array
 

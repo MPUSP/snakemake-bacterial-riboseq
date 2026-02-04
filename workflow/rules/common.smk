@@ -34,14 +34,18 @@ def get_final_output():
 
 # get fastq files
 def get_fastq(wildcards):
-    if wildcards.status == "raw":
-        return expand(
-            "{input_dir}/{sample}",
-            input_dir=samples.loc[wildcards.sample]["data_folder"],
-            sample=samples.loc[wildcards.sample]["fq1"],
-        )
-    if wildcards.status == "clipped":
-        return expand("results/clipped/{sample}.fastq.gz", sample=samples.index)
+    raw_reads = expand(
+        "{input_dir}/{sample}",
+        input_dir=samples.loc[wildcards.sample]["data_folder"],
+        sample=samples.loc[wildcards.sample]["fq1"],
+    )
+    if hasattr(wildcards, "status"):
+        if wildcards.status == "raw":
+            return raw_reads
+        if wildcards.status == "cutadapt":
+            return expand("results/cutadapt/{sample}.fastq.gz", sample=wildcards.sample)
+    else:
+        return raw_reads
 
 
 # get bam files
