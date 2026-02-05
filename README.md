@@ -42,8 +42,8 @@ This workflow is a best-practice workflow for the analysis of ribosome footprint
 The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
 
 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
-   1. Using automatic download from NCBI with a `RefSeq` ID
-   2. Using user-supplied files
+    1. Using automatic download from NCBI with a `RefSeq` ID
+    2. Using user-supplied files
 2. Check quality of input sequencing data (`FastQC`)
 3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
 4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
@@ -103,10 +103,10 @@ Important requirements when using custom `*.fasta` and `*.gff` files:
 
 Ribosome footprint sequencing data in `*.fastq.gz` format. The currently supported input data are **single-end, strand-specific reads**. Input data files are supplied via a mandatory table, whose location is indicated in the `config.yml` file (default: `samples.tsv`). The sample sheet has the following layout:
 
-| sample   | condition | replicate | data_folder | fq1                      |
-| -------- | --------- | --------- | ----------- | ------------------------ |
-| RPF-RTP1 | RPF-RTP   | 1         | data        | RPF-RTP1_R1_001.fastq.gz |
-| RPF-RTP2 | RPF-RTP   | 2         | data        | RPF-RTP2_R1_001.fastq.gz |
+| sample   | condition | replicate | fq1                           |
+| -------- | --------- | --------- | ----------------------------- |
+| RPF-RTP1 | RPF-RTP   | 1         | data/RPF-RTP1_R1_001.fastq.gz |
+| RPF-RTP2 | RPF-RTP   | 2         | data/RPF-RTP2_R1_001.fastq.gz |
 
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
@@ -157,8 +157,7 @@ This table lists all parameters that can be used to run the workflow.
 | gff                    | str  | optional path to gff file                   | Null                                         |
 | gff_source_type        | str  | list of name/value pairs for GFF source     | see config file                              |
 | **cutadapt**           |      |                                             |                                              |
-| fivep_adapter          | str  | sequence of the 5' adapter                  | Null                                         |
-| threep_adapter         | str  | sequence of the 3' adapter                  | `ATCGTAGATCGGAAGAGCACACGTCTGAA`              |
+| adapters               | str  | sequence of the 3'/5' adapter               | `-a ATCGTAGATCGGAAGAGCACACGTCTGAA`           |
 | default                | str  | additional options passed to `cutadapt`     | [`-q 10 `, `-m 22 `, `-M 52`, `--overlap=3`] |
 | **umi_extraction**     |      |                                             |                                              |
 | method                 | str  | one of `string` or `regex`, see manual      | `regex`                                      |
@@ -200,12 +199,12 @@ This table lists all parameters that can be used to run the workflow.
 ## Authors
 
 - Dr. Rina Ahmed-Begrich
-  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
-  - ORCID profile: https://orcid.org/0000-0002-0656-1795
+    - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
+    - ORCID profile: https://orcid.org/0000-0002-0656-1795
 - Dr. Michael Jahn
-  - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
-  - ORCID profile: https://orcid.org/0000-0002-3913-153X
-  - github page: https://github.com/m-jahn
+    - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
+    - ORCID profile: https://orcid.org/0000-0002-3913-153X
+    - github page: https://github.com/m-jahn
 
 Visit the MPUSP github page at https://github.com/MPUSP for more info on this workflow and other projects.
 
