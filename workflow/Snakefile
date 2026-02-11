@@ -1,17 +1,13 @@
 # ----------------------------------------------------- #
 # A Snakemake workflow for the analysis of riboseq      #
 # data in bacteria.                                     #
+#                                                       #
 # Authors: Rina Ahmed-Begrich, Michael Jahn             #
-# Date: 2024-22-07                                      #
-# License: Free for non-commercial use (see LICENSE)    #
-#          For all 3rd party tools separate licenses    #
-#          may apply.                                   #
+# License: MIT                                          #
 # ----------------------------------------------------- #
 
-conda: "envs/global.yml"
 
 import os
-import pandas as pd
 from datetime import date
 from snakemake.utils import min_version
 
@@ -41,7 +37,7 @@ configfile: "config/config.yml"
 
 
 # container definition (optional)
-container: "oras://ghcr.io/MPUSP/snakemake-bacterial-riboseq:1.2.0"
+containerized: "oras://ghcr.io/mpusp/snakemake-bacterial-riboseq:latest"
 
 
 # load rules

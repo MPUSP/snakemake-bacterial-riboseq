@@ -331,7 +331,7 @@ knitr::include_graphics(plot_hitmaps_postshift, error = FALSE, rel_path = FALSE)
 - ribosome footprints are usually aligned to the P-site (peptidyl site) of the translating ribosome
 - ribosomes move on the mRNA one codon at a time, producing characteristic 3-nt periodicity
 - periodicity can be visualized with a density map of read count per position around start/stop codons
-- intergenic regions should not show this pattern
+- read count is normalized by total read number (RPM, reads per million mapped reads)
 - coverage on frame zero should be higher than frame one and two (see right hand summary)
 - if not, consider supplying manual shift table (see previous section [Read shifting](#read-shifting))
 
@@ -365,35 +365,48 @@ df_start_cov <- lapply(sample_names, function(x) {
       forceUniqueEven = FALSE
     )
 }) %>%
-  bind_rows(.id = "sample") %>%
+  setNames(sample_names) %>%
+  bind_rows(.id = "sample_name") %>%
+  as_tibble() %>%
+  left_join(df_conditions, by = "sample_name") %>%
+  left_join(df_read_number %>%
+      filter(status == "filtered") %>%
+      dplyr::select(sample_name, total_reads = count),
+      by = "sample_name"
+  ) %>%
   mutate(position = position + 50) %>%
-  group_by(position, frame) %>%
-  summarize(score = mean(score, na.rm = TRUE), .groups = "drop")
+  mutate(score_rpm_norm = score / total_reads * 1e6)
+  write_csv(df_start_cov, file = paste0(export_plots, "start_codon_coverage.csv"))
+  df_start_cov <- df_start_cov %>%
+  group_by(condition, position, frame) %>%
+  summarize(score = mean(score_rpm_norm, na.rm = TRUE), .groups = "drop")
 
 plot_3nt_start <- df_start_cov %>%
   ggplot(aes(x = position, y = score)) +
   geom_rect(
     data = filter(df_start_cov, score == max(score)),
-    aes(xmin = -50, xmax = 0, ymin = max(score) * 0.8, ymax = max(score)), fill = "#E5E5E599"
+    aes(xmin = -50, xmax = 0, ymin = max(score) * 0.9, ymax = max(score)), fill = "#E5E5E599"
   ) +
   geom_rect(
     data = filter(df_start_cov, score == max(score)),
-    aes(xmin = 0, xmax = 150, ymin = max(score) * 0.8, ymax = max(score)), fill = "#bdeb8b99"
+    aes(xmin = 0, xmax = 150, ymin = max(score) * 0.9, ymax = max(score)), fill = "#bdeb8b99"
   ) +
   geom_text(
     data = filter(df_start_cov, score == max(score)),
-    aes(x = -25, y = max(score) * 0.9, label = "intergenic"), col = grey(0.5)
+    aes(x = -25, y = max(score) * 0.95, label = "intergenic"), col = grey(0.5)
   ) +
   geom_text(
     data = filter(df_start_cov, score == max(score)),
-    aes(x = 75, y = max(score) * 0.9, label = "ORF"), col = grey(0.5)
+    aes(x = 75, y = max(score) * 0.95, label = "ORF"), col = grey(0.5)
   ) +
   geom_vline(xintercept = 0, col = grey(0.5), linetype = 2) +
-  geom_line(color = custom_colors[1]) +
-  custom_theme() +
+  geom_line(aes(color = condition)) +
+  custom_theme(legend.position = c(0.8, 0.8)) +
+  scale_color_manual(values = custom_colors) +
   labs(
     title = "3-nt periodicity around START codon",
-    subtitle = "average of all annotated ORFs and replicates"
+    subtitle = "average of all annotated ORFs and replicates",
+    x = "position relative to start codon [nt]", y = "score (RPM)"
   ) +
   coord_cartesian(xlim = c(-50, 150))
 
@@ -431,35 +444,48 @@ df_stop_cov <- lapply(sample_names, function(x) {
       forceUniqueEven = FALSE
     )
 }) %>%
-  bind_rows(.id = "sample") %>%
+  setNames(sample_names) %>%
+  bind_rows(.id = "sample_name") %>%
+  as_tibble() %>%
+  left_join(df_conditions, by = "sample_name") %>%
+  left_join(df_read_number %>%
+      filter(status == "filtered") %>%
+      dplyr::select(sample_name, total_reads = count),
+      by = "sample_name"
+  ) %>%
   mutate(position = position - 50) %>%
-  group_by(position, frame) %>%
-  summarize(score = mean(score, na.rm = TRUE), .groups = "drop")
+  mutate(score_rpm_norm = score / total_reads * 1e6)
+  write_csv(df_stop_cov, file = paste0(export_plots, "stop_codon_coverage.csv"))
+  df_stop_cov <- df_stop_cov %>%
+  group_by(condition, position, frame) %>%
+  summarize(score = mean(score_rpm_norm, na.rm = TRUE), .groups = "drop")
 
 plot_3nt_stop <- df_stop_cov %>%
   ggplot(aes(x = position, y = score)) +
   geom_rect(
     data = filter(df_stop_cov, score == max(score)),
-    aes(xmin = -150, xmax = 0, ymin = max(score) * 0.8, ymax = max(score)), fill = "#bdeb8b99"
+    aes(xmin = -150, xmax = 0, ymin = max(score) * 0.9, ymax = max(score)), fill = "#bdeb8b99"
   ) +
   geom_rect(
     data = filter(df_stop_cov, score == max(score)),
-    aes(xmin = 0, xmax = 50, ymin = max(score) * 0.8, ymax = max(score)), fill = "#E5E5E599"
+    aes(xmin = 0, xmax = 50, ymin = max(score) * 0.9, ymax = max(score)), fill = "#E5E5E599"
   ) +
   geom_text(
     data = filter(df_stop_cov, score == max(score)),
-    aes(x = -75, y = max(score) * 0.9, label = "ORF"), col = grey(0.5)
+    aes(x = -75, y = max(score) * 0.95, label = "ORF"), col = grey(0.5)
   ) +
   geom_text(
     data = filter(df_stop_cov, score == max(score)),
-    aes(x = 25, y = max(score) * 0.9, label = "intergenic"), col = grey(0.5)
+    aes(x = 25, y = max(score) * 0.95, label = "intergenic"), col = grey(0.5)
   ) +
   geom_vline(xintercept = 0, col = grey(0.5), linetype = 2) +
-  geom_line(color = custom_colors[1]) +
-  custom_theme() +
+  geom_line(aes(color = condition)) +
+  custom_theme(legend.position = c(0.2, 0.8)) +
+  scale_color_manual(values = custom_colors) +
   labs(
     title = "3-nt periodicity around STOP codon",
-    subtitle = "average of all annotated ORFs and replicates"
+    subtitle = "average of all annotated ORFs and replicates",
+    x = "position relative to stop codon [nt]", y = "score (RPM)"
   ) +
   coord_cartesian(xlim = c(-150, 50))
 

@@ -14,8 +14,7 @@ get_genome:
     ]
 
 cutadapt:
-  fivep_adapter: Null
-  threep_adapter: "ATCGTAGATCGGAAGAGCACACGTCTGAA"
+  adapters: "-a ATCGTAGATCGGAAGAGCACACGTCTGAA"
   default: ["-q 10 ", "-m 22 ", "-M 52", "--overlap=3"]
 
 umi_extraction:
@@ -65,6 +64,7 @@ shift_reads:
   skip_length_filter: True
 
 multiqc:
+  fastqc_stage: "raw"
   config: "config/multiqc_config.yml"
 
 report:

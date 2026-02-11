@@ -1,4 +1,4 @@
-$schema: "http://json-schema.org/draft-07/schema#"
+$schema: "https://json-schema.org/draft/2020-12/schema"
 description: an entry in the sample sheet
 properties:
   sample:
@@ -11,16 +11,12 @@ properties:
     type: number
     default: 1
     description: consecutive numbers representing multiple replicates of one condition
-  data_folder:
-    type: string
-    description: path to fastq files
   fq1:
     type: string
-    description: names of fastq files
+    description: path to fastq file
 
 required:
   - sample
   - condition
   - replicate
-  - data_folder
   - fq1

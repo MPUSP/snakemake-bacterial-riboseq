@@ -9,54 +9,37 @@ rule fastqc:
     input:
         get_fastq,
     output:
-        report=directory("results/fastqc_{status}/{sample}"),
-    conda:
-        "../envs/fastqc.yml"
+        html="results/fastqc_{status}/{sample}_fastqc.html",
+        zip="results/fastqc_{status}/{sample}_fastqc.zip",
     message:
         """--- Checking fastq files with FastQC."""
     log:
         "results/fastqc_{status}/log/{sample}.log",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
-    shell:
-        "mkdir -p {output.report};"
-        "fastqc --nogroup --extract --quiet --threads {threads} -o {output.report} {input} > {log}"
+    threads: max(1, int(workflow.cores * 0.25))
+    resources:
+        mem_mb=1024,
+    wrapper:
+        "v7.6.0/bio/fastqc"
 
 
 # module to trim adapters from reads
 # -----------------------------------------------------
 rule cutadapt:
     input:
-        fastq=lambda wc: expand(
-            "{input_dir}/{sample}",
-            input_dir=samples.loc[wc.sample]["data_folder"],
-            sample=samples.loc[wc.sample]["fq1"],
-        ),
+        get_fastq,
     output:
         fastq="results/clipped/{sample}.fastq.gz",
-    conda:
-        "../envs/cutadapt.yml"
+        qc="results/clipped/{sample}.qc.txt",
+    params:
+        adapters=config["cutadapt"]["adapters"],
+        extra=config["cutadapt"]["default"],
     message:
         """--- Trim adapters from reads."""
-    params:
-        fivep_adapter=config["cutadapt"]["fivep_adapter"],
-        threep_adapter=config["cutadapt"]["threep_adapter"],
-        default=config["cutadapt"]["default"],
+    threads: max(1, int(workflow.cores * 0.25))
     log:
-        stdout="results/clipped/log/{sample}.log",
-        stderr="results/clipped/log/{sample}.stderr",
-    threads: int(workflow.cores * 0.4)  # assign 40% of max cores
-    shell:
-        "if [ {params.fivep_adapter} != None ]; then "
-        "fivep=`echo -g {params.fivep_adapter}`; "
-        "else fivep=''; "
-        "fi; "
-        "if [ {params.threep_adapter} != None ]; then "
-        "threep=`echo -a {params.threep_adapter}`; "
-        "else threep=''; "
-        "fi; "
-        "cutadapt ${{fivep}} ${{threep}} "
-        "{params.default} --cores {threads} "
-        "-o {output.fastq} {input.fastq} > {log.stdout} 2> {log.stderr}"
+        "results/clipped/log/{sample}.log",
+    wrapper:
+        "v7.9.0/bio/cutadapt/se"
 
 
 # module to extract UMIs and attach to read name
@@ -86,23 +69,31 @@ rule umi_extraction:
 # module to fetch genome from NCBI or Ensemble
 # -----------------------------------------------------
 rule get_genome:
+    input:
+        fasta=lambda wildcards: (
+            config["get_genome"]["fasta"]
+            if config["get_genome"]["database"] == "manual"
+            else []
+        ),
+        gff=lambda wildcards: (
+            config["get_genome"]["gff"]
+            if config["get_genome"]["database"] == "manual"
+            else []
+        ),
     output:
-        path=directory("results/get_genome"),
         fasta="results/get_genome/genome.fasta",
         gff="results/get_genome/genome.gff",
-    conda:
-        "../envs/get_genome.yml"
-    message:
-        """--- Parsing genome GFF and FASTA files."""
+        fai="results/get_genome/genome.fasta.fai",
     params:
         database=config["get_genome"]["database"],
         assembly=config["get_genome"]["assembly"],
-        fasta=config["get_genome"]["fasta"],
-        gff=config["get_genome"]["gff"],
+        gff_source_types=config["get_genome"]["gff_source_type"],
+    message:
+        "--- Parsing genome GFF and FASTA files"
     log:
         path="results/get_genome/log/get_genome.log",
-    script:
-        "../scripts/get_genome.py"
+    wrapper:
+        "https://raw.githubusercontent.com/MPUSP/mpusp-snakemake-wrappers/refs/heads/main/get_genome"
 
 
 # module to map reads to ref genome using STAR aligner
@@ -155,7 +146,7 @@ rule star_mapping:
         outprefix=lambda w, output: f"{os.path.splitext(output.bam)[0]}_",
     log:
         path="results/mapped/log/{sample}.log",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "STAR "
         "--runThreadN {threads} "
@@ -185,7 +176,7 @@ rule mapping_sorted_bam:
         """--- Samtools sort and index bam files."""
     params:
         tmp="results/mapped/sort_{sample}_tmp",
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "samtools sort -@ {threads} -O bam -T {params.tmp} -o {output.bam} {input} 2> {log}; "
         "samtools index -@ {threads} {output.bam} 2>> {log}"
@@ -207,7 +198,7 @@ rule umi_dedup:
     params:
         tmp="results/deduplicated/sort_{sample}_tmp",
         default=config["umi_dedup"],
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     log:
         path="results/deduplicated/log/{sample}.log",
         stderr="results/deduplicated/log/{sample}.stderr",
@@ -256,7 +247,7 @@ rule filter_bam:
         "../envs/filter_bam.yml"
     params:
         defaults=config["bedtools_intersect"]["defaults"],
-    threads: int(workflow.cores * 0.2)  # assign 20% of max cores
+    threads: max(1, int(workflow.cores * 0.25))
     shell:
         "intersectBed -abam {input.bam} -b {input.gff} {params.defaults} | "
         "samtools sort -@ {threads} > {output.bam} 2> {log.path}; "
@@ -286,7 +277,11 @@ rule extract_mapping_length:
 # -----------------------------------------------------
 rule multiqc:
     input:
-        expand("results/fastqc_clipped/{sample}_fastqc.html", sample=samples.index),
+        expand(
+            "results/fastqc_{status}/{sample}_fastqc.html",
+            sample=samples.index,
+            status=config["multiqc"]["fastqc_stage"],
+        ),
         expand("results/clipped/{sample}.fastq.gz", sample=samples.index),
         expand(
             "results/umi_extraction/{sample}.fastq.gz",

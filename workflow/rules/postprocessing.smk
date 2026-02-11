@@ -63,7 +63,6 @@ rule shift_reads:
         """--- Shifting Ribo-Seq reads."""
     params:
         config["shift_reads"],
-    threads: workflow.cores
     log:
         path="results/shift_reads/log/{sample}.log",
     script:
@@ -89,7 +88,6 @@ rule feature_stats:
         "../envs/r_orfik.yml"
     message:
         """--- Calculating feature-wise statistics."""
-    threads: workflow.cores
     log:
         path="results/feature_stats/log/stats.log",
     script:

@@ -11,19 +11,19 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
 The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
 
- 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+1.  Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
     1. Using automatic download from NCBI with a `RefSeq` ID
     2. Using user-supplied files
- 2. Check quality of input sequencing data (`FastQC`)
- 3. Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
- 4. Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
- 5. Map reads to the reference genome (`STAR aligner`)
- 6. Sort and index for aligned seq data (`samtools`)
- 7. Filter reads by feature type (`bedtools`)
- 8. Generate summary report for all processing steps (`MultiQC`)
- 9. Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
- 10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
- 11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
+2.  Check quality of input sequencing data (`FastQC`)
+3.  Cut adapters and filter by length and/or sequencing quality score (`cutadapt`)
+4.  Deduplicate reads by unique molecular identifier (UMI, `umi_tools`)
+5.  Map reads to the reference genome (`STAR aligner`)
+6.  Sort and index for aligned seq data (`samtools`)
+7.  Filter reads by feature type (`bedtools`)
+8.  Generate summary report for all processing steps (`MultiQC`)
+9.  Shift ribo-seq reads according to the ribosome's P-site alignment (`R`, `ORFik`)
+10. Calculate basic gene-wise statistics such as RPKM (`R`, `ORFik`)
+11. Return report as HTML and PDF files (`R markdown`, `weasyprint`)
 
 If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
 
@@ -38,18 +38,7 @@ cd snakemake-bacterial-riboseq
 
 **Step 2: Install dependencies**
 
-It is recommended to install snakemake and run the workflow with `conda`, `mamba` or `micromamba`.
-
-```bash
-# download Miniconda3 installer
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-# install Conda (respond by 'yes')
-bash miniconda.sh
-# update Conda
-conda update -y conda
-# install Mamba
-conda install -n base -c conda-forge -y mamba
-```
+It is recommended to install snakemake and run the workflow with `conda` or `mamba`. [Miniforge](https://conda-forge.org/download/) is the preferred conda-forge installer and includes `conda`, `mamba` and their dependencies.
 
 **Step 3: Create snakemake environment**
 
@@ -63,8 +52,7 @@ conda activate snakemake-bacterial-riboseq
 
 **Note:**
 
-All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--use-conda` parameter (recommended).
-
+All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--sdm conda` parameter (recommended).
 
 ## Running the workflow
 
@@ -85,15 +73,15 @@ Important requirements when using custom `*.fasta` and `*.gff` files:
 
 Ribosome footprint sequencing data in `*.fastq.gz` format. The currently supported input data are **single-end, strand-specific reads**. Input data files are supplied via a mandatory table, whose location is indicated in the `config.yml` file (default: `samples.tsv`). The sample sheet has the following layout:
 
-| sample   | condition | replicate | data_folder | fq1                      |
-| -------- | --------- | --------- | ----------- | ------------------------ |
-| RPF-RTP1 | RPF-RTP   | 1         | data        | RPF-RTP1_R1_001.fastq.gz |
-| RPF-RTP2 | RPF-RTP   | 2         | data        | RPF-RTP2_R1_001.fastq.gz |
+| sample   | condition | replicate | fq1                           |
+| -------- | --------- | --------- | ----------------------------- |
+| RPF-RTP1 | RPF-RTP   | 1         | data/RPF-RTP1_R1_001.fastq.gz |
+| RPF-RTP2 | RPF-RTP   | 2         | data/RPF-RTP2_R1_001.fastq.gz |
 
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
 - Minimum and maximum read length after adapter removal (see option `cutadapt: default`). Here, the test data has a minimum read length of 15 + 7 = 22 (2 nt on 5'end + 5 nt on 3'end), and a maximum of 45 + 7 = 52.
-- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy & Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
+- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy &amp; Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
 
 Example configuration files for different sequencing protocols can be found in `resources/protocols/`.
 
@@ -115,7 +103,13 @@ snakemake --dry-run
 To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test
+snakemake --cores 10 --sdm conda --directory .test
+```
+
+To run the workflow with **singularity** / **apptainer**, use:
+
+```bash
+snakemake --cores 10 --sdm conda apptainer --directory .test
 ```
 
 ### Parameters
@@ -133,8 +127,7 @@ This table lists all parameters that can be used to run the workflow.
 | gff                    | str  | optional path to gff file                   | Null                                         |
 | gff_source_type        | str  | list of name/value pairs for GFF source     | see config file                              |
 | **cutadapt**           |      |                                             |                                              |
-| fivep_adapter          | str  | sequence of the 5' adapter                  | Null                                         |
-| threep_adapter         | str  | sequence of the 3' adapter                  | `ATCGTAGATCGGAAGAGCACACGTCTGAA`              |
+| adapters               | str  | sequence of 5' (`-g`) / 3' (`-a`) adapter   | `-a ATCGTAGATCGGAAGAGCACACGTCTGAA`           |
 | default                | str  | additional options passed to `cutadapt`     | [`-q 10 `, `-m 22 `, `-M 52`, `--overlap=3`] |
 | **umi_extraction**     |      |                                             |                                              |
 | method                 | str  | one of `string` or `regex`, see manual      | `regex`                                      |
