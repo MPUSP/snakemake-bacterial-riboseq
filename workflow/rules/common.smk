@@ -37,8 +37,8 @@ def get_fastq(wildcards):
     if hasattr(wildcards, "status"):
         if wildcards.status == "raw":
             return samples.loc[wildcards.sample]["fq1"]
-        if wildcards.status == "cutadapt":
-            return f"results/cutadapt/{wildcards.sample}.fastq.gz"
+        if wildcards.status == "clipped":
+            return f"results/clipped/{wildcards.sample}.fastq.gz"
     else:
         return samples.loc[wildcards.sample]["fq1"]
 

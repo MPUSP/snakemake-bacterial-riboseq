@@ -132,7 +132,7 @@ This table lists all parameters that can be used to run the workflow.
 | gff                    | str  | optional path to gff file                   | Null                                         |
 | gff_source_type        | str  | list of name/value pairs for GFF source     | see config file                              |
 | **cutadapt**           |      |                                             |                                              |
-| adapters               | str  | sequence of the 3'/5' adapter               | `-a ATCGTAGATCGGAAGAGCACACGTCTGAA`           |
+| adapters               | str  | sequence of 5' (`-g`) / 3' (`-a`) adapter   | `-a ATCGTAGATCGGAAGAGCACACGTCTGAA`           |
 | default                | str  | additional options passed to `cutadapt`     | [`-q 10 `, `-m 22 `, `-M 52`, `--overlap=3`] |
 | **umi_extraction**     |      |                                             |                                              |
 | method                 | str  | one of `string` or `regex`, see manual      | `regex`                                      |

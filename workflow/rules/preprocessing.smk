@@ -28,8 +28,8 @@ rule cutadapt:
     input:
         get_fastq,
     output:
-        fastq="results/cutadapt/{sample}.fastq.gz",
-        qc="results/cutadapt/{sample}.qc.txt",
+        fastq="results/clipped/{sample}.fastq.gz",
+        qc="results/clipped/{sample}.qc.txt",
     params:
         adapters=config["cutadapt"]["adapters"],
         extra=config["cutadapt"]["default"],
@@ -37,7 +37,7 @@ rule cutadapt:
         """--- Trim adapters from reads."""
     threads: max(1, int(workflow.cores * 0.25))
     log:
-        "results/cutadapt/log/{sample}.log",
+        "results/clipped/log/{sample}.log",
     wrapper:
         "v7.9.0/bio/cutadapt/se"
 
@@ -46,7 +46,7 @@ rule cutadapt:
 # -----------------------------------------------------
 rule umi_extraction:
     input:
-        fastq="results/cutadapt/{sample}.fastq.gz",
+        fastq="results/clipped/{sample}.fastq.gz",
     output:
         fastq="results/umi_extraction/{sample}.fastq.gz",
     conda:
@@ -282,7 +282,7 @@ rule multiqc:
             sample=samples.index,
             status=config["multiqc"]["fastqc_stage"],
         ),
-        expand("results/cutadapt/{sample}.fastq.gz", sample=samples.index),
+        expand("results/clipped/{sample}.fastq.gz", sample=samples.index),
         expand(
             "results/umi_extraction/{sample}.fastq.gz",
             sample=samples.index,

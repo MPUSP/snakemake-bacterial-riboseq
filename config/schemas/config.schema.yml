@@ -98,7 +98,7 @@ properties:
     properties:
       fastqc_stage:
         type: string
-        enum: ["raw", "cutadapt"]
+        enum: ["raw", "clipped"]
       config:
         type: string
 
