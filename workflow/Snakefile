@@ -1,11 +1,9 @@
 # ----------------------------------------------------- #
 # A Snakemake workflow for the analysis of riboseq      #
 # data in bacteria.                                     #
+#                                                       #
 # Authors: Rina Ahmed-Begrich, Michael Jahn             #
-# Date: 2024-22-07                                      #
-# License: Free for non-commercial use (see LICENSE)    #
-#          For all 3rd party tools separate licenses    #
-#          may apply.                                   #
+# License: MIT                                          #
 # ----------------------------------------------------- #
 
 

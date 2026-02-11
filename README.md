@@ -32,8 +32,6 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 
 ## Workflow overview
 
-<!-- include logo-->
-
 <img src="resources/images/logo.png" align="center" />
 
 ---
@@ -82,7 +80,7 @@ conda activate snakemake-bacterial-riboseq
 
 **Note:**
 
-All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--use-conda` parameter (recommended).
+All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--sdm conda` parameter (recommended).
 
 ## Running the workflow
 

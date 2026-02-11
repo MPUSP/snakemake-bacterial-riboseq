@@ -38,18 +38,7 @@ cd snakemake-bacterial-riboseq
 
 **Step 2: Install dependencies**
 
-It is recommended to install snakemake and run the workflow with `conda`, `mamba` or `micromamba`.
-
-```bash
-# download Miniconda3 installer
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-# install Conda (respond by 'yes')
-bash miniconda.sh
-# update Conda
-conda update -y conda
-# install Mamba
-conda install -n base -c conda-forge -y mamba
-```
+It is recommended to install snakemake and run the workflow with `conda` or `mamba`. [Miniforge](https://conda-forge.org/download/) is the preferred conda-forge installer and includes `conda`, `mamba` and their dependencies.
 
 **Step 3: Create snakemake environment**
 
@@ -63,7 +52,7 @@ conda activate snakemake-bacterial-riboseq
 
 **Note:**
 
-All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--use-conda` parameter (recommended).
+All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--sdm conda` parameter (recommended).
 
 ## Running the workflow
 
@@ -92,7 +81,7 @@ Ribosome footprint sequencing data in `*.fastq.gz` format. The currently support
 Some configuration parameters of the pipeline may be specific for your data and library preparation protocol. The options should be adjusted in the `config.yml` file. For example:
 
 - Minimum and maximum read length after adapter removal (see option `cutadapt: default`). Here, the test data has a minimum read length of 15 + 7 = 22 (2 nt on 5'end + 5 nt on 3'end), and a maximum of 45 + 7 = 52.
-- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy & Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
+- Unique molecular identifiers (UMIs). For example, the protocol by [McGlincy &amp; Ingolia, 2017](https://doi.org/10.1016/J.YMETH.2017.05.028) creates a UMI that is located on both the 5'-end (2 nt) and the 3'-end (5 nt). These UMIs are extracted with `umi_tools` (see options `umi_extraction: method` and `pattern`).
 
 Example configuration files for different sequencing protocols can be found in `resources/protocols/`.
 
@@ -114,7 +103,13 @@ snakemake --dry-run
 To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test
+snakemake --cores 10 --sdm conda --directory .test
+```
+
+To run the workflow with **singularity** / **apptainer**, use:
+
+```bash
+snakemake --cores 10 --sdm conda apptainer --directory .test
 ```
 
 ### Parameters
