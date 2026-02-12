@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.5.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.4.0...v1.5.0) (2026-02-12)
+
+
+### Features
+
+* added automatic apptainer deployment ([adecfeb](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/adecfeb425733e7fa9ac097c7a1b5188631aa7fc))
+* replaced cutadapt and fastqc with latest wrappers ([2cbc2c2](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/2cbc2c282611a7a6c1b4d4d5bba8f9306cfccee6))
+* replaced get_genome with wrapper ([192c1bb](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/192c1bbbe0a102a84a33469ab7f39ab2e3d62726))
+* updated all workflows to latest version ([650414c](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/650414c24b92c2aecaff07996e50b024a01ddc21))
+
+
+### Bug Fixes
+
+* bump super-linter version ([d209250](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/d209250627319a09aca11bd86d24c14a2dde09d9))
+* comments ([912adf7](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/912adf78f6feee40707d5d9f02cc98657494be73))
+* plot 3nt periodicity sample-wise not as average ([71433a4](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/71433a43d689735f06b3404a78931e6617fc8248))
+* remove global env as pandas should work with default snakemake ([34b913c](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/34b913c61263e797cc6f165fce5bf7ffea01fdcc))
+* remove multi-threading where unused ([6751d19](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/6751d191785b4e6b360a05fce8f765c2f9486f45))
+* removed unnecessary data_folder var in sample sheet ([dd0e12f](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/dd0e12f31e6b5144be25b4c90f2737d1b49958d0))
+* smarter resource declaration, prevents failurewith few cores ([c908e84](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/c908e846f632efb8134b37bb89d1942cd97f5a86))
+* updated umitools to latest version ([68b2118](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/68b211848e67850c3a06d64772b20580d8f60e5b))
+
 ## [1.4.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.3.0...v1.4.0) (2025-02-02)
 
 
