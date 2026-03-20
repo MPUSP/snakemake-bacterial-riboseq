@@ -1,81 +1,128 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
-description: an entry in the sample sheet
+description: configuration options
 properties:
   samplesheet:
     type: string
-    description: sample name/identifier
+    description: path to samplesheet, mandatory
+    default: config/samples.tsv
 
   get_genome:
+    description: reference genome source and files
     properties:
       database:
         type: ["string", "null"]
+        description: one of `manual`, `ncbi`
+        default: ncbi
       assembly:
         type: ["string", "null"]
+        description: RefSeq ID
+        default: GCF_000006785.2
       fasta:
         type: ["string", "null"]
+        description: optional path to fasta file
       gff:
         type: ["string", "null"]
+        description: optional path to gff file
       gff_source_type:
         type: array
+        description: list of name/value pairs for GFF source
 
   cutadapt:
+    description: adapter trimming parameters
     properties:
       adapters:
         type: string
+        description: sequence of 5' (-g) / 3' (-a) adapter
+        default: -a ATCGTAGATCGGAAGAGCACACGTCTGAA
       default:
         type: array
+        description: additional options passed to cutadapt
+        default: ["-q 10 ", "-m 22 ", "-M 52", "--overlap=3"]
 
   umi_extraction:
+    description: UMI extraction settings
     properties:
       method:
         type: string
         enum: ["regex", "string"]
+        description: one of `string` or `regex`, see manual
+        default: regex
       pattern:
         type: string
+        description: string or regular expression
+        default: ^(?P<umi_0>.{5}).*(?P<umi_1>.{2})$
 
   umi_dedup:
     type: array
+    description: default options for deduplication
 
   star:
+    description: STAR alignment settings
     properties:
       index:
         type: ["string", "null"]
+        description: location of genome index; if Null, is made
       genomeSAindexNbases:
         type: number
+        description: length of pre-indexing string, see STAR man
+        default: 9
       multi:
         type: number
+        description: max number of loci read is allowed to map
+        default: 10
       sam_multi:
         type: number
+        description: max number of alignments reported for read
+        default: 1
       intron_max:
         type: number
+        description: max length of intron; 0 = automatic choice
+        default: 1
       default:
         type: array
+        description: default options for STAR aligner
 
   extract_features:
+    description: feature extraction and filtering
     properties:
       biotypes:
         type: array
+        description: biotypes to exclude from mapping
+        default: [rRNA, tRNA]
       CDS:
         type: array
+        description: CDS type to include for mapping
+        default: [protein_coding]
 
   bedtools_intersect:
+    description: bedtools intersect options
     properties:
       defaults:
         type: array
+        description: remove hits, sense strand, min overlap 20%
+        default: ["-v ", "-s ", "-f 0.2"]
 
   annotate_orfs:
+    description: ORF annotation settings
     properties:
       window_size:
         type: number
+        description: size of 5'-UTR added to CDS
+        default: 30
 
   shift_reads:
+    description: read shifting parameters
     properties:
       window_size:
         type: number
+        description: start codon window to determine shift
+        default: 30
       read_length:
         type: array
         maxItems: 2
         minItems: 2
+        description: size range of reads to use for shifting
+        default: [27, 45]
         items:
           type: number
           minimum: 10
@@ -83,37 +130,62 @@ properties:
       end_alignment:
         type: string
         enum: ["3prime", "5prime"]
+        description: end used for alignment of RiboSeq reads
+        default: 3prime
       shift_table:
         type: ["string", "null"]
+        description: optional table with offsets per read length
       export_bigwig:
         type: boolean
+        description: export shifted reads as bam file
+        default: true
       export_ofst:
         type: boolean
+        description: export shifted reads as ofst file
+        default: false
       skip_shifting:
         type: boolean
+        description: skip read shifting entirely
+        default: false
       skip_length_filter:
         type: boolean
+        description: skip filtering reads by length
+        default: false
 
   multiqc:
+    description: MultiQC reporting parameters
     properties:
       fastqc_stage:
         type: string
         enum: ["raw", "clipped"]
       config:
         type: string
+        description: path to multiqc config
+        default: config/multiqc_config.yml
 
   report:
+    description: report rendering parameters
     properties:
       export_figures:
         type: boolean
+        description: export figures as .svg and .png
+        default: true
       export_dir:
         type: string
+        description: sub-directory for figure export
+        default: figures/
       figure_width:
         type: number
+        description: standard figure width in px
+        default: 875
       figure_height:
         type: number
+        description: standard figure height in px
+        default: 500
       figure_resolution:
         type: number
+        description: standard figure resolution in dpi
+        default: 125
 
 required:
   [

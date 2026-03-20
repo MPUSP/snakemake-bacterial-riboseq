@@ -1,8 +1,7 @@
 # snakemake-bacterial-riboseq
 
-![Platform](https://img.shields.io/badge/platform-all-green)
 [![Snakemake](https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg)](https://snakemake.github.io)
-[![Tests](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/main.yml)
+[![GitHub Actions](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/snakemake-tests.yml/badge.svg)](https://github.com/MPUSP/snakemake-bacterial-riboseq/actions/workflows/snakemake-tests.yml)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1D355C.svg?labelColor=000000)](https://sylabs.io/docs/)
 [![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog)
@@ -14,21 +13,21 @@ A Snakemake workflow for the analysis of bacterial riboseq data.
 - [snakemake-bacterial-riboseq](#snakemake-bacterial-riboseq)
   - [Usage](#usage)
   - [Workflow overview](#workflow-overview)
-  - [Installation](#installation)
+  - [Deployment options](#deployment-options)
   - [Running the workflow](#running-the-workflow)
     - [Input data](#input-data)
       - [Reference genome](#reference-genome)
       - [Read data](#read-data)
-    - [Execution](#execution)
-    - [Parameters](#parameters)
   - [Authors](#authors)
   - [References](#references)
 
 ## Usage
 
-The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=MPUSP%2Fsnakemake-bacterial-riboseq).
+The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/docs/workflows/MPUSP/snakemake-bacterial-riboseq.html).
 
-If you use this workflow in a paper, don't forget to give credits to the authors by citing the URL of this (original) repository and its DOI (see above).
+Detailed information about input data and workflow configuration can be found in the [`config/README.md`](config/README.md).
+
+If you use this workflow in a paper, don't forget to give credits to the author(s) by citing the URL of this repository, the release, and its DOI if available.
 
 ## Workflow overview
 
@@ -37,6 +36,7 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 ---
 
 This workflow is a best-practice workflow for the analysis of ribosome footprint sequencing (Ribo-Seq) data.
+
 The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
 
 1. Obtain genome database in `fasta` and `gff` format (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
@@ -55,32 +55,32 @@ The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stab
 
 If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-bacterial-riboseq).
 
-## Installation
+## Deployment options
 
-**Step 1: Clone this repository**
-
-```bash
-git clone https://github.com/MPUSP/snakemake-bacterial-riboseq.git
-cd snakemake-bacterial-riboseq
-```
-
-**Step 2: Install dependencies**
-
-It is recommended to install snakemake and run the workflow with `conda` or `mamba`. [Miniforge](https://conda-forge.org/download/) is the preferred conda-forge installer and includes `conda`, `mamba` and their dependencies.
-
-**Step 3: Create snakemake environment**
-
-This step creates a new conda environment called `snakemake-bacterial-riboseq`.
+To run the workflow from command line, change the working directory.
 
 ```bash
-# create new environment with dependencies & activate it
-mamba create -c conda-forge -c bioconda -n snakemake-bacterial-riboseq snakemake pandas
-conda activate snakemake-bacterial-riboseq
+cd path/to/snakemake-bacterial-riboseq
 ```
 
-**Note:**
+Adjust options in the default config file `config/config.yml`.
+Before running the complete workflow, you can perform a dry run using:
 
-All other dependencies for the workflow are **automatically pulled as `conda` environments** by snakemake, when running the workflow with the `--sdm conda` parameter (recommended).
+```bash
+snakemake --dry-run
+```
+
+To run the workflow with test files using **conda**:
+
+```bash
+snakemake --cores 2 --sdm conda --directory .test
+```
+
+To run the workflow with test files using **apptainer**:
+
+```bash
+snakemake --cores 2 --sdm conda apptainer --directory .test
+```
 
 ## Running the workflow
 
@@ -113,92 +113,12 @@ Some configuration parameters of the pipeline may be specific for your data and 
 
 Example configuration files for different sequencing protocols can be found in `resources/protocols/`.
 
-### Execution
-
-To run the workflow from command line, change the working directory.
-
-```bash
-cd path/to/snakemake-bacterial-riboseq
-```
-
-Adjust options in the default config file `config/config.yml`.
-Before running the entire workflow, you can perform a dry run using:
-
-```bash
-snakemake --dry-run
-```
-
-To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
-
-```bash
-snakemake --cores 10 --sdm conda --directory .test
-```
-
-To run the workflow with **singularity** / **apptainer**, use:
-
-```bash
-snakemake --cores 10 --sdm conda apptainer --directory .test
-```
-
-### Parameters
-
-This table lists all parameters that can be used to run the workflow.
-
-| parameter              | type | details                                     | default                                      |
-| ---------------------- | ---- | ------------------------------------------- | -------------------------------------------- |
-| **samplesheet**        |      |                                             |                                              |
-| path                   | str  | path to samplesheet, mandatory              | "config/samples.tsv"                         |
-| **get_genome**         |      |                                             |                                              |
-| database               | str  | one of `manual`, `ncbi`                     | `ncbi`                                       |
-| assembly               | str  | RefSeq ID                                   | `GCF_000006785.2`                            |
-| fasta                  | str  | optional path to fasta file                 | Null                                         |
-| gff                    | str  | optional path to gff file                   | Null                                         |
-| gff_source_type        | str  | list of name/value pairs for GFF source     | see config file                              |
-| **cutadapt**           |      |                                             |                                              |
-| adapters               | str  | sequence of 5' (`-g`) / 3' (`-a`) adapter   | `-a ATCGTAGATCGGAAGAGCACACGTCTGAA`           |
-| default                | str  | additional options passed to `cutadapt`     | [`-q 10 `, `-m 22 `, `-M 52`, `--overlap=3`] |
-| **umi_extraction**     |      |                                             |                                              |
-| method                 | str  | one of `string` or `regex`, see manual      | `regex`                                      |
-| pattern                | str  | string or regular expression                | `^(?P<umi_0>.{5}).*(?P<umi_1>.{2})$`         |
-| **umi_dedup**          |      |                                             |                                              |
-| options                | str  | default options for deduplication           | see config file                              |
-| **star**               |      |                                             |                                              |
-| index                  | str  | location of genome index; if Null, is made  | Null                                         |
-| genomeSAindexNbases    | num  | length of pre-indexing string, see STAR man | 9                                            |
-| multi                  | num  | max number of loci read is allowed to map   | 10                                           |
-| sam_multi              | num  | max number of alignments reported for read  | 1                                            |
-| intron_max             | num  | max length of intron; 0 = automatic choice  | 1                                            |
-| default                | str  | default options for STAR aligner            | see config file                              |
-| **extract_features**   |      |                                             |                                              |
-| biotypes               | str  | biotypes to exclude from mapping            | [`rRNA`, `tRNA`]                             |
-| CDS                    | str  | CDS type to include for mapping             | [`protein_coding`]                           |
-| **bedtools_intersect** |      |                                             |                                              |
-| defaults               | str  | remove hits, sense strand, min overlap 20%  | [`-v `, `-s `, `-f 0.2`]                     |
-| **annotate_orfs**      |      |                                             |                                              |
-| window_size            | num  | size of 5'-UTR added to CDS                 | 30                                           |
-| **shift_reads**        |      |                                             |                                              |
-| window_size            | num  | start codon window to determine shift       | 30                                           |
-| read_length            | num  | size range of reads to use for shifting     | [27, 45]                                     |
-| end_alignment          | str  | end used for alignment of RiboSeq reads     | `3prime`                                     |
-| shift_table            | str  | optional table with offsets per read length | Null                                         |
-| export_bigwig          | str  | export shifted reads as bam file            | True                                         |
-| export_ofst            | str  | export shifted reads as ofst file           | False                                        |
-| skip_shifting          | str  | skip read shifting entirely                 | False                                        |
-| skip_length_filter     | str  | skip filtering reads by length              | False                                        |
-| **multiqc**            |      |                                             |                                              |
-| config                 | str  | path to multiqc config                      | `config/multiqc_config.yml`                  |
-| **report**             |      |                                             |                                              |
-| export_figures         | bool | export figures as `.svg` and `.png`         | True                                         |
-| export_dir             | str  | sub-directory for figure export             | `figures/`                                   |
-| figure_width           | num  | standard figure width in px                 | 875                                          |
-| figure_height          | num  | standard figure height in px                | 500                                          |
-| figure_resolution      | num  | standard figure resolution in dpi           | 125                                          |
-
 ## Authors
 
 - Dr. Rina Ahmed-Begrich
     - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
     - ORCID profile: https://orcid.org/0000-0002-0656-1795
+    - github page: https://github.com/rabioinf
 - Dr. Michael Jahn
     - Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
     - ORCID profile: https://orcid.org/0000-0002-3913-153X
