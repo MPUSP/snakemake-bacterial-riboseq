@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.5.0...v1.6.0) (2026-04-07)
+
+
+### Features
+
+* replaced github workflows with central workflows ([1a98461](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/1a9846155e4185d16c7020e073149b1ff4d41e39))
+* various updates, e.g. support automatic rendering of config options in wf-catalog ([44d2ad1](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/44d2ad1a2a9f3464801b599e2e951ccae02f993a))
+
+
+### Bug Fixes
+
+* update docs and schemas ([55d20bc](https://github.com/MPUSP/snakemake-bacterial-riboseq/commit/55d20bc9c9f8219bd5c2fe6b4217d254f216873c))
+
 ## [1.5.0](https://github.com/MPUSP/snakemake-bacterial-riboseq/compare/v1.4.0...v1.5.0) (2026-02-12)
 
 
